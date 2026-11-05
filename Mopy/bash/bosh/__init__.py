@@ -1512,12 +1512,12 @@ class ScreenInfo(AFileInfo):
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
 #------------------------------------------------------------------------------
-def _copied(src: Path, dst: Path, new_dsts) -> bool:
+def _copied(src: Path, dst: Path, pre_dsts) -> bool:
     """Whether copying src to dst went through, as far as we can tell: dst
     did not exist before and is now a file with the size and modification
     time of src - both file operation backends keep it. We can't tell for
     folders, nor for files that the copy may or may not have replaced."""
-    if dst not in new_dsts: return False
+    if dst in pre_dsts: return False
     try:
         src_stat, dst_stat = os.stat(src), os.stat(dst)
     except OSError:
@@ -1579,50 +1579,51 @@ def _move_back(moved):
         except OSError:
             deprint(f'Failed to move {aside} back to {p}', traceback=True)
 
-def _chained_paths(paths_per_file):
+def _chained_paths(pairs):
     """The paths that are both a source and a destination of the batch, like
     Oblivion.esm (and its backups) in the esm swap."""
-    pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
-             rename_paths]
     return {old for old, _new in pairs} & {new for _old, new in pairs}
 
-def _moved(old: Path, new: Path, chained) -> bool:
+def _moved(old: Path, new: Path, pre_dsts) -> bool:
     """Whether moving old to new went through, as far as we can tell: new
-    exists - but a chained destination existed before the move, so for those
-    old must be gone too."""
-    return new.exists() and (new not in chained or not old.exists())
+    exists - but if it existed before the move, old must be gone too."""
+    return new.exists() and (new not in pre_dsts or not old.exists())
 
-def _check_renamed(paths_per_file, new_dsts=None, *, keep=True):
+def _check_renamed(paths_per_file, pre_dsts, *, copy=False, keep=True):
     """The file operation of rename_operation failed: keep the infos that
-    made it - unless keep is False - and revert the rest. For copies
-    new_dsts holds the destinations that did not exist before the copy -
-    the only files we may remove."""
-    chained = _chained_paths(paths_per_file) if new_dsts is None else set()
+    made it - unless keep is False - and revert the rest. pre_dsts holds the
+    destinations that existed before the file operation: copies may not
+    remove them, and a move into them only went through if its source is
+    gone."""
+    pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
+             rename_paths]
+    chained = set() if copy else _chained_paths(pairs)
+    # decide for every pair before reverting any of them
+    moved = {} if copy else {p: _moved(*p, pre_dsts) for p in pairs}
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
-    keep = keep and (not chained or all(_moved(*p, chained) for rename_paths,
-        *_ in paths_per_file.values() for p in rename_paths))
+    keep = keep and (not chained or all(moved.values()))
     # later infos may have moved into the sources of earlier ones
     for inf, (rename_paths, new_name, *_inf_dir) in reversed(
             [*paths_per_file.items()]):
         if keep:
-            if new_dsts is None: # a move
-                if all(_moved(*p, chained) for p in rename_paths):
+            if not copy:
+                if all(moved[p] for p in rename_paths):
                     for old, _new in rename_paths:
                         if old not in chained: # another pair moved into it
                             old.remove() #(241) clear paths left behind
                     continue
-            elif all(_copied(*p, new_dsts) for p in rename_paths):
+            elif all(_copied(*p, pre_dsts) for p in rename_paths):
                 continue # e.g. the user pressed Skip for another file
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
-        if new_dsts is not None:
+        if copy:
             # A copy that may not have made it - and destinations that
             # existed before may or may not have been replaced. Remove the
             # ones we created - never the sources, those are the user's files
             # (and backups)
             for _old, new in rename_paths:
-                if new in new_dsts:
+                if new not in pre_dsts:
                     _remove_copy(new)
             continue
         # When using moveTo I would get "WindowsError:[Error 32]The process
@@ -1631,7 +1632,7 @@ def _check_renamed(paths_per_file, new_dsts=None, *, keep=True):
         # except if a save is locked and user presses Skip - so cosaves are
         # renamed! Error handling is still a WIP
         for old, new in rename_paths:
-            if not _moved(old, new, chained): continue
+            if not moved[(old, new)]: continue
             if not old.exists(): # some cosave move failed, restore files
                 new.moveTo(old, check_exist=False)  # just checked
             elif old not in chained: # else another pair moved into it
@@ -1831,8 +1832,8 @@ class DataStore(DataDict):
             all_rename_paths.update(rename_paths)
             paths_per_file[inf] = rename_paths, new_name, infdir
         if all_rename_paths:
-            new_dsts = {d for d in all_rename_paths.values() if not d.exists()
-                        } if copy_inf else None
+            # the destinations that exist before the file operation
+            pre_dsts = {d for d in all_rename_paths.values() if d.exists()}
             # move the satellites to delete aside, so that a failed copy can
             # put them back - raises if one can't be moved, like removing it.
             # Not the ones another info copies: tags files are per body, so
@@ -1860,20 +1861,22 @@ class DataStore(DataDict):
                             if isinstance(e, OSError) and try_once(
                                     msg, title=_('File in Use')):
                                 if not copy_inf: # retry what did not move
-                                    chained = _chained_paths(paths_per_file)
                                     todo = {o: n for o, n in todo.items() if
-                                            not _moved(o, n, chained)}
+                                            not _moved(o, n, pre_dsts)}
                                 if todo: continue
                                 checked = True
                                 break
-                            _check_renamed(paths_per_file, new_dsts)
+                            _check_renamed(paths_per_file, pre_dsts,
+                                           copy=copy_inf)
                             checked = True
                             raise
-                        _check_renamed(paths_per_file, new_dsts)
+                        _check_renamed(paths_per_file, pre_dsts,
+                                       copy=copy_inf)
                     except BaseException: # e.g. ifileoperation's
                         # FileOperatorError: we can't tell what it means, so
                         # we undo it all
-                        _check_renamed(paths_per_file, new_dsts, keep=False)
+                        _check_renamed(paths_per_file, pre_dsts,
+                                       copy=copy_inf, keep=False)
                         checked = True
                         raise
                     checked = True
