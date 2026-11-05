@@ -315,8 +315,13 @@ def exit_cleanup():
     } for bs_sect, bs_setts in bs_dict.items() if bs_sect in bs_defaults}
     # Don't create the folder or file if no settings have been changed yet
     if changed_settings and any(map(bool, changed_settings.values())):
-        _boot_settings.abs_path.head.makedirs()
-        _boot_settings.saveSettings(changed_settings)
+        try: # saveSettings raises if it can't read the file - cleaning up
+            # and restarting below must still happen
+            _boot_settings.abs_path.head.makedirs()
+            _boot_settings.saveSettings(changed_settings)
+        except (OSError, UnicodeError):
+            bolt.deprint(f'Failed to save {_boot_settings.abs_path}',
+                         traceback=True)
     # Do this after writing out boot-settings.toml, because ini_files uses
     # wbtemp for the atomic write
     wbtemp.cleanup_temp()

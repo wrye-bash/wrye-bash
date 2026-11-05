@@ -3526,7 +3526,12 @@ class BSAInfos(_AFileInfos):
         if do_redirect:
             bsa_archs.insert(0, self._aii_name)
         sArchives = ', '.join(bsa_archs)
-        oblivionIni.saveSetting('Archive', 'sArchiveList', sArchives)
+        try: # we run on every BAIN refresh, don't raise when the INI can't be
+            # read (and so getSetting above returned the default)
+            oblivionIni.saveSetting('Archive', 'sArchiveList', sArchives)
+        except (OSError, UnicodeError):
+            deprint(f'Failed to set BSA redirection in {oblivionIni.abs_path}',
+                    traceback=True)
 
 #------------------------------------------------------------------------------
 class ScreenInfos(_AFileInfos):
