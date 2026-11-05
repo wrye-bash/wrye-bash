@@ -1606,15 +1606,16 @@ def _moved(old: Path, new: Path, pre_dsts) -> bool:
     exists - but if it existed before the move, old must be gone too."""
     return new.exists() and (new not in pre_dsts or not old.exists())
 
-def _check_renamed(paths_per_file, pre_dsts, *, copy=False, keep=True):
+def _check_renamed(paths_per_file, pre_dsts, chained, *, copy=False,
+                   keep=True):
     """The file operation of rename_operation failed: keep the infos that
     made it - unless keep is False - and revert the rest. pre_dsts holds the
     destinations that existed before the file operation: copies may not
     remove them, and a move into them only went through if its source is
-    gone."""
+    gone. chained are the _chained_paths of the whole batch - not of what
+    is left of it in paths_per_file, if we were called before."""
     pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
              rename_paths]
-    chained = set() if copy else _chained_paths(pairs)
     # decide for every pair before reverting any of them
     moved = {} if copy else {p: _moved(*p, pre_dsts) for p in pairs}
     # a chained batch is all or nothing - else Data could end up without
@@ -1851,6 +1852,8 @@ class DataStore(DataDict):
         if all_rename_paths:
             # the destinations that exist before the file operation
             pre_dsts = {d for d in all_rename_paths.values() if d.exists()}
+            chained = set() if copy_inf else _chained_paths(
+                all_rename_paths.items())
             # move the satellites to delete aside, so that a failed copy can
             # put them back - raises if one can't be moved, like removing it.
             # Not the ones another info copies: tags files are per body, so
@@ -1883,11 +1886,11 @@ class DataStore(DataDict):
                                 if todo: continue
                                 checked = True
                                 break
-                            _check_renamed(paths_per_file, pre_dsts,
+                            _check_renamed(paths_per_file, pre_dsts, chained,
                                            copy=copy_inf)
                             checked = True
                             raise
-                        _check_renamed(paths_per_file, pre_dsts,
+                        _check_renamed(paths_per_file, pre_dsts, chained,
                                        copy=copy_inf)
                     checked = True
                     break
@@ -1895,8 +1898,8 @@ class DataStore(DataDict):
                 # or from the File in Use dialog: we can't tell what it means,
                 # so we undo it all
                 if not checked:
-                    _check_renamed(paths_per_file, pre_dsts, copy=copy_inf,
-                                   keep=False)
+                    _check_renamed(paths_per_file, pre_dsts, chained,
+                                   copy=copy_inf, keep=False)
                     checked = True
                 raise
             finally:
