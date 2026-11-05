@@ -1510,14 +1510,26 @@ class ScreenInfo(AFileInfo):
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
 #------------------------------------------------------------------------------
-def _check_renamed(paths_per_file):
+def _check_renamed(paths_per_file, new_dsts=None):
+    """The file operation of rename_operation failed: keep the infos that
+    made it and revert the rest. For copies new_dsts holds the destinations
+    that did not exist before the copy - the only files we may remove."""
     for inf, (rename_paths, new_name, *_inf_dir) in [*paths_per_file.items()]:
-        if all(p[1].exists() for p in rename_paths):
+        if new_dsts is None and all(p[1].exists() for p in rename_paths):
             for p in rename_paths:
                 p[0].remove() #(241) clear paths left behind (needed?)
             continue
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
+        if new_dsts is not None:
+            # A copy: we can't tell which ones made it, as destinations may
+            # have existed before. Remove the ones we created - never the
+            # sources, those are the user's files (and backups)
+            for _old, new in rename_paths:
+                if new in new_dsts:
+                    if new.is_dir(): new.rmtree(safety=new.stail)
+                    else: new.remove()
+            continue
         # When using moveTo I would get "WindowsError:[Error 32]The process
         # cannot access ..." -  the code below was reverting the changes.
         # With shellMove I mostly get CancelError so below not needed -
@@ -1706,6 +1718,7 @@ class DataStore(DataDict):
             return rd_ren
         all_rename_paths = {}
         paths_per_file = {} # revert partial renames
+        del_after_copy = defaultdict(list) # satellites missing from copies
         for inf, new_name, *inf_dir in info_new_name:
             infdir = inf_dir[0] if inf_dir else None
             rename_paths = inf.get_rename_paths(new_name, infdir, with_backups)
@@ -1718,11 +1731,13 @@ class DataStore(DataDict):
                     # if cosave exists while its backup not, delete it on
                     # restoring - copy_inf is currently used in restore backup
                     # will also delete the tag files when duplicating mods
-                    if src_missing and copy_inf:
-                        tup[1].remove() ##:(292) we should document this
+                    if src_missing and copy_inf: # once the copy succeeded
+                        del_after_copy[inf].append(tup[1]) ##:(292) document
             all_rename_paths.update(rename_paths)
             paths_per_file[inf] = rename_paths, new_name, infdir
         if all_rename_paths:
+            new_dsts = {d for d in all_rename_paths.values() if not d.exists()
+                        } if copy_inf else None
             while try_once:
                 try:
                     (env.shellCopy if copy_inf else env.shellMove)(
@@ -1738,10 +1753,16 @@ class DataStore(DataDict):
                         if isinstance(e, OSError) and try_once(
                                 msg, title=_('File in Use')):
                             continue
-                        _check_renamed(paths_per_file)
+                        _check_renamed(paths_per_file, new_dsts)
                         raise
-                    _check_renamed(paths_per_file)
+                    _check_renamed(paths_per_file, new_dsts)
                 break
+        for inf in paths_per_file: # the infos that made it
+            for stale_path in del_after_copy[inf]:
+                try:
+                    stale_path.remove()
+                except OSError:
+                    deprint(f'Failed to remove {stale_path}', traceback=True)
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
         inst_dupl = isinstance(insert_after, int) ##: moveArchives must be moved
         for inf, (rename_paths, new_name, infdir) in paths_per_file.items():
