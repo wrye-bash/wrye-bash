@@ -1512,12 +1512,12 @@ class ScreenInfo(AFileInfo):
             FName(file_root + num_str + self.fn_key.fn_ext), '')
 
 #------------------------------------------------------------------------------
-def _copied(src: Path, dst: Path, pre_dsts) -> bool:
+def _copied(src: Path, dst: Path, pre_ids) -> bool:
     """Whether copying src to dst went through, as far as we can tell: dst
     did not exist before and is now a file with the size and modification
     time of src - both file operation backends keep it. We can't tell for
     folders, nor for files that the copy may or may not have replaced."""
-    if dst in pre_dsts: return False
+    if dst in pre_ids: return False
     try:
         src_stat, dst_stat = os.stat(src), os.stat(dst)
     except OSError:
@@ -1601,23 +1601,37 @@ def _chained_paths(pairs):
     return srcs & dsts | {n for n in dsts if n.cext == '.ghost' and
                           n.root in srcs}
 
-def _moved(old: Path, new: Path, pre_dsts) -> bool:
-    """Whether moving old to new went through, as far as we can tell: new
-    exists - but if it existed before the move, old must be gone too."""
-    return new.exists() and (new not in pre_dsts or not old.exists())
+def _file_id(p):
+    st = os.stat(p)
+    return st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns
 
-def _check_renamed(paths_per_file, pre_dsts, chained, *, copy=False,
+def _same_file(p, pre_ids) -> bool:
+    """Whether p is still the file it was before the file operation."""
+    try:
+        return p in pre_ids and _file_id(p) == pre_ids[p]
+    except OSError:
+        return False
+
+def _moved(old: Path, new: Path, pre_ids) -> bool:
+    """Whether moving old to new went through, as far as we can tell: new
+    exists - and if it existed before the move, it is another file now, and
+    so is old, if not gone: a later pair may have moved into it."""
+    return new.exists() and (new not in pre_ids or not (
+        _same_file(new, pre_ids) or _same_file(old, pre_ids)))
+
+def _check_renamed(paths_per_file, pre_ids, chained, *, copy=False,
                    keep=True):
     """The file operation of rename_operation failed: keep the infos that
-    made it - unless keep is False - and revert the rest. pre_dsts holds the
-    destinations that existed before the file operation: copies may not
-    remove them, and a move into them only went through if its source is
-    gone. chained are the _chained_paths of the whole batch - not of what
-    is left of it in paths_per_file, if we were called before."""
+    made it - unless keep is False - and revert the rest. pre_ids holds the
+    paths of the batch that existed before the file operation: copies may
+    not remove them, and a move into them only went through if they are
+    another file now (see _moved). chained are the _chained_paths of the
+    whole batch - not of what is left of it in paths_per_file, if we were
+    called before."""
     pairs = [p for rename_paths, *_ in paths_per_file.values() for p in
              rename_paths]
     # decide for every pair before reverting any of them
-    moved = {} if copy else {p: _moved(*p, pre_dsts) for p in pairs}
+    moved = {} if copy else {p: _moved(*p, pre_ids) for p in pairs}
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
     keep = keep and (not chained or all(moved.values()))
@@ -1631,7 +1645,7 @@ def _check_renamed(paths_per_file, pre_dsts, chained, *, copy=False,
                         if old not in chained: # another pair moved into it
                             old.remove() #(241) clear paths left behind
                     continue
-            elif all(_copied(*p, pre_dsts) for p in rename_paths):
+            elif all(_copied(*p, pre_ids) for p in rename_paths):
                 continue # e.g. the user pressed Skip for another file
         deprint(f'Renaming {inf} to {new_name} failed', traceback=True)
         del paths_per_file[inf]
@@ -1641,7 +1655,7 @@ def _check_renamed(paths_per_file, pre_dsts, chained, *, copy=False,
             # ones we created - never the sources, those are the user's files
             # (and backups)
             for _old, new in rename_paths:
-                if new not in pre_dsts:
+                if new not in pre_ids:
                     _remove_copy(new)
             continue
         # When using moveTo I would get "WindowsError:[Error 32]The process
@@ -1854,8 +1868,13 @@ class DataStore(DataDict):
             all_rename_paths.update(rename_paths)
             paths_per_file[inf] = rename_paths, new_name, infdir
         if all_rename_paths:
-            # the destinations that exist before the file operation
-            pre_dsts = {d for d in all_rename_paths.values() if d.exists()}
+            # the paths that exist before the file operation, and their files
+            pre_ids = {}
+            for p in (*all_rename_paths, *all_rename_paths.values()):
+                try:
+                    pre_ids[p] = _file_id(p)
+                except OSError:
+                    pass
             chained = set() if copy_inf else _chained_paths(
                 all_rename_paths.items())
             # move the satellites to delete aside, so that a failed copy can
@@ -1886,15 +1905,15 @@ class DataStore(DataDict):
                                     msg, title=_('File in Use')):
                                 if not copy_inf: # retry what did not move
                                     todo = {o: n for o, n in todo.items() if
-                                            not _moved(o, n, pre_dsts)}
+                                            not _moved(o, n, pre_ids)}
                                 if todo: continue
                                 checked = True
                                 break
-                            _check_renamed(paths_per_file, pre_dsts, chained,
+                            _check_renamed(paths_per_file, pre_ids, chained,
                                            copy=copy_inf)
                             checked = True
                             raise
-                        _check_renamed(paths_per_file, pre_dsts, chained,
+                        _check_renamed(paths_per_file, pre_ids, chained,
                                        copy=copy_inf)
                     checked = True
                     break
@@ -1902,7 +1921,7 @@ class DataStore(DataDict):
                 # or from the File in Use dialog: we can't tell what it means,
                 # so we undo it all
                 if not checked:
-                    _check_renamed(paths_per_file, pre_dsts, chained,
+                    _check_renamed(paths_per_file, pre_ids, chained,
                                    copy=copy_inf, keep=False)
                     checked = True
                 raise
