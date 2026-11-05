@@ -1581,8 +1581,12 @@ def _move_back(moved):
 
 def _chained_paths(pairs):
     """The paths that are both a source and a destination of the batch, like
-    Oblivion.esm (and its backups) in the esm swap."""
-    return {old for old, _new in pairs} & {new for _old, new in pairs}
+    Oblivion.esm (and its backups) in the esm swap - and the ghosts moved
+    onto a plugin that moves away: Oblivion.esm.ghost when Oblivion_1.1.esm
+    is ghosted."""
+    srcs, dsts = {old for old, _new in pairs}, {new for _old, new in pairs}
+    return srcs & dsts | {n for n in dsts if n.cext == '.ghost' and
+                          n.root in srcs}
 
 def _moved(old: Path, new: Path, pre_dsts) -> bool:
     """Whether moving old to new went through, as far as we can tell: new
