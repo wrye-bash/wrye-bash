@@ -1889,12 +1889,9 @@ class DataStore(DataDict):
                         except OSError:
                             deprint(f'Failed to remove {aside}',
                                     traceback=True)
-        made = {new_name for _rp, new_name, _d in paths_per_file.values()}
         # self[newName]._mark_unchanged() # not needed with shellMove!(#241...)
         inst_dupl = isinstance(insert_after, int) ##: moveArchives must be moved
-        if insert_after and not inst_dupl: # not for the copies that failed
-            insert_after = FNDict((k, v) for k, v in insert_after.items()
-                                  if k in made)
+        added = set() # not the copies that failed, nor those to other folders
         for inf, (rename_paths, new_name, infdir) in paths_per_file.items():
             set_ghost = (ap := getattr(inf, 'abs_path', None)) and \
                         all_rename_paths[ap].cext == '.ghost'
@@ -1905,6 +1902,7 @@ class DataStore(DataDict):
                 ren_paths=inf.set_path_keys(new_name, infodir=infdir))
             add_to_store = not rename_paths or inf.info_dir == self.store_dir
             if add_to_store: # add the info (or marker info) to the store
+                added.add(new_name)
                 kws = {'redraw' if new_name in self else 'to_add': {new_name}}
                 self[new_name] = inf
                 if inst_dupl:
@@ -1913,15 +1911,18 @@ class DataStore(DataDict):
                 if set_ghost: # do this after set_path_keys (restore backup)
                     inf.is_ghost = True # we need to mirror get_rename_paths
         for new, flgs in (force_flags or {}).items():
-            if new in made: # else self[new] may be the file we copied onto
+            if new in added: # else self[new] may be the file we copied onto
                 self[new].set_plugin_flags(flgs)
         if set_mtime: # only set in self.try_set_version/restore backup
             for k, v in set_mtime.items():
-                if k in made:
+                if k in added:
                     self[k].setmtime(v)
             if not copy_inf and len(renames_di := rd_ren.renames) == 2:
                 move_to = renames_di.pop(bush.game.master_file)
                 renames_di[next(iter(renames_di))] = move_to
+        if insert_after and not inst_dupl:
+            insert_after = FNDict((k, v) for k, v in insert_after.items()
+                                  if k in added)
         return self.refresh(rd_ren, unlock_lo=True, insert_after=insert_after,
                             what='N' if inst_dupl else 'I')
 
