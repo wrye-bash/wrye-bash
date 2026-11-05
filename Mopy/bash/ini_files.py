@@ -236,7 +236,12 @@ class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target 
         self._ci_settings_cache_linenum = self.__empty_settings
 
     # AIniInfo overrides ------------------------------------------------------
-    def read_ini_content(self, as_unicode=True, missing_ok=False):
+    def read_ini_content(self, as_unicode=True, missing_ok=False, *,
+                         for_write=False):
+        """Return the lines of the file (or its bytes if not as_unicode) - or
+        nothing if it can't be read. Pass for_write when the file is going to
+        be rewritten from the result: errors reading it are then raised, and
+        undecodable bytes are kept."""
         try:
             with open(self.abs_path, mode='rb') as f:
                 content = f.read()
@@ -246,11 +251,15 @@ class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target 
             self.isCorrupted = {'ini_full_path': self.abs_path, 'exc': str(e)}
             deprint(f'Failed to decode {self.abs_path} using '
                     f'{self.ini_encoding}', traceback=True)
+            if for_write: # saveSettings writes them back with surrogateescape
+                return str(content, self.ini_encoding,
+                           'surrogateescape').splitlines(False)
         except FileNotFoundError:
             if not missing_ok:
                 deprint(f'INI file {self.abs_path} missing when we tried '
                         f'reading it', traceback=True)
         except OSError:
+            if for_write: raise # we'd write the file back empty
             deprint(f'Error reading ini file {self.abs_path}', traceback=True)
         return []
 
@@ -323,7 +332,8 @@ class IniFileInfo(AIniInfo, DelFile, AFileInfo): ##: only inherit DF for target 
                         tmp_ini.write(f'{line}\n')
                 skip = False
                 # We may have to create the file
-                for line in self.read_ini_content(missing_ok=True):
+                for line in self.read_ini_content(missing_ok=True,
+                                                  for_write=True):
                     stripped, setting, val, new_section, is_del = \
                         self.parse_ini_line(line, parse_comments=True)
                     if setting and not skip: # modify? we need be in a section
@@ -499,9 +509,10 @@ class GameIni(IniFileInfo):
         # The INIs the game reads its settings from, the overriding one first
         self.setting_inis = [*filter(None, (custom_ini, self, base_ini))]
 
-    def read_ini_content(self, as_unicode=True, missing_ok=False):
+    def read_ini_content(self, as_unicode=True, missing_ok=False, *,
+                         for_write=False):
         # Custom INIs may well not exist, so we ignore missing_ok
-        content = super().read_ini_content(False, True)
+        content = super().read_ini_content(False, True, for_write=for_write)
         if not as_unicode: return content
         if not content: return [] # empty, missing or unreadable
         content = content.removeprefix(codecs.BOM_UTF8)
