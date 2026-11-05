@@ -1543,56 +1543,51 @@ def _remove_copy(new: Path):
     except OSError:
         deprint(f'Failed to remove {new}', traceback=True)
 
-def _move_aside(paths_per_inf):
-    """Rename the existing paths of each info in paths_per_inf to a unique
-    name in their folder and return the (path, aside) pairs per info. The
-    ones that can't be renamed are removed once the rest went through, their
-    aside being their contents and stat, to write them back. If one can't
-    be moved, put back the ones already moved and raise."""
-    moved_per_inf = {}
+def _move_aside(paths):
+    """Rename each existing path in paths to a unique name in its folder and
+    return {path: aside}. The ones that can't be renamed are removed once
+    the rest went through, their aside being their contents and stat, to
+    write them back. If one can't be moved, put back the ones already moved
+    and raise."""
+    moved = {}
     to_remove = []
-    seen = set() # a save and its disabled twin share their cosaves
     try:
-        for inf, paths in paths_per_inf.items():
-            moved_per_inf[inf] = moved = []
-            for p in paths:
-                if p in seen or not os.path.lexists(p): continue
-                seen.add(p)
-                aside = p + f'.{os.urandom(2).hex()}.wbtmp' # Path.__add__
-                try:
-                    os.replace(p, aside)
-                except OSError as e:
-                    # MO2's USVFS fails renames across volumes (EXDEV), and
-                    # the longer name may not fit in MAX_PATH (winerror 206
-                    # is an ENOENT)
-                    if e.errno not in (errno.EXDEV, errno.ENOENT,
-                                       errno.ENAMETOOLONG): raise
-                    to_remove.append((moved, p))
-                    continue
-                moved.append((p, aside))
-        for moved, p in to_remove: # cosaves and tags files - small enough
+        for p in paths:
+            if not os.path.lexists(p): continue
+            aside = p + f'.{os.urandom(2).hex()}.wbtmp' # Path.__add__
+            try:
+                os.replace(p, aside)
+            except OSError as e:
+                # MO2's USVFS fails renames across volumes (EXDEV), and the
+                # longer name may not fit in MAX_PATH (winerror 206 is an
+                # ENOENT)
+                if e.errno not in (errno.EXDEV, errno.ENOENT,
+                                   errno.ENAMETOOLONG): raise
+                to_remove.append(p)
+                continue
+            moved[p] = aside
+        for p in to_remove: # cosaves and tags files - small enough
             with open(p, 'rb') as ins:
                 kept = ins.read(), os.stat(p)
             p.remove()
-            moved.append((p, kept))
+            moved[p] = kept
     except OSError:
-        for moved in moved_per_inf.values():
-            _move_back(moved)
+        for p, aside in moved.items():
+            _move_back(p, aside)
         raise
-    return moved_per_inf
+    return moved
 
-def _move_back(moved):
-    for p, aside in moved:
-        try:
-            if isinstance(aside, tuple): # we had to remove it, write it back
-                content, st = aside
-                with open(p, 'xb') as out:
-                    out.write(content)
-                os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
-            else:
-                os.replace(aside, p)
-        except OSError:
-            deprint(f'Failed to put {p} back', traceback=True)
+def _move_back(p, aside):
+    try:
+        if isinstance(aside, tuple): # we had to remove it, write it back
+            content, st = aside
+            with open(p, 'xb') as out:
+                out.write(content)
+            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
+        else:
+            os.replace(aside, p)
+    except OSError:
+        deprint(f'Failed to put {p} back', traceback=True)
 
 def _chained_paths(pairs):
     """The paths that are both a source and a destination of the batch, like
@@ -1901,9 +1896,11 @@ class DataStore(DataDict):
             # put them back - raises if one can't be moved, like removing it.
             # Not the ones another info copies: tags files are per body, so
             # A.esp's 'A Copy.txt' may be the tags file of 'A Copy.esm'
-            stale_aside = _move_aside({inf: [p for p in stale if
-                p not in all_rename_paths] for inf, stale in
-                del_after_copy.items()})
+            stale_infs = defaultdict(list) # twins share their cosaves
+            for inf, stale in del_after_copy.items():
+                for p in stale:
+                    if p not in all_rename_paths: stale_infs[p].append(inf)
+            stale_aside = _move_aside(stale_infs)
             checked = False # then paths_per_file holds what made it
             try:
                 todo = all_rename_paths
@@ -1947,12 +1944,12 @@ class DataStore(DataDict):
                     checked = True
                 raise
             finally:
-                for inf, moved in stale_aside.items():
-                    if not checked or inf not in paths_per_file:
-                        _move_back(moved)
-                        continue
-                    for _p, aside in moved:
-                        if isinstance(aside, tuple): continue # removed
+                for p, aside in stale_aside.items():
+                    # stale once the copy of one of its infos made it
+                    if not checked or not any(i in paths_per_file for i in
+                                              stale_infs[p]):
+                        _move_back(p, aside)
+                    elif not isinstance(aside, tuple): # else removed
                         try:
                             aside.remove()
                         except OSError:
