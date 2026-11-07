@@ -41,6 +41,7 @@ _GAME_DATA = {
     'Fallout4': 'fallout4',
     'Morrowind': 'morrowind',
     'Oblivion': 'oblivion',
+    'OblivionRE': 'oblivion-remastered',
     'Skyrim': 'skyrim',
     'SkyrimSE': 'skyrimse',
     'Starfield': 'starfield',
