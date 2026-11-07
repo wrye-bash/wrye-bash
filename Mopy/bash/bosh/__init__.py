@@ -1637,14 +1637,18 @@ def _moved(old: Path, new: Path, pre_ids, chained) -> bool:
         old, pre_ids)) and (new not in pre_ids or _holds(new, pre_ids.get(
         old))) # else only this pair can have created new
 
-def _left_copy(old: Path, new: Path, pre_ids) -> bool:
+def _left_copy(old: Path, new: Path, pre_ids, moved_out) -> bool:
     """Whether new holds a copy of old that a failed move left - moves
     across volumes copy, then delete old, which must still be the file it
-    was - and nothing else: new did not exist before. A folder copy must
-    only hold files old still has: deleting old's stops at the first error,
-    and a folder's identity misses what it contains."""
-    if new in pre_ids or not new.exists() or not _same_file(old, pre_ids):
-        return False
+    was - and nothing else: new did not exist before, or it is a chained
+    path whose own file moved out (in moved_out) - then the pair that moved
+    it can be put back. A folder copy must only hold files old still has:
+    deleting old's stops at the first error, and a folder's identity misses
+    what it contains."""
+    if not new.exists() or not _same_file(old, pre_ids): return False
+    if new in pre_ids:
+        return new in moved_out and not _same_file(new, pre_ids) and _holds(
+            new, pre_ids.get(old))
     if not new.is_dir(): return True
     errors = [] # can't tell - keep the copy
     for root, _dirs, files in os.walk(new, onerror=errors.append):
@@ -1676,8 +1680,10 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
     keep = keep and (not chained or all(done.values()))
     # where the pairs that went through moved to - cosaves are named by
     # body, so saves of two bodies renamed to X.ess and X.esr both move their
-    # cosave to X.obse
+    # cosave to X.obse - and the chained paths they emptied
     done_dsts = {new for (_old, new), d in done.items() if d}
+    moved_out = {old for (old, _new), d in done.items() if d and old in
+                 chained}
     kept = set() # the copies of the infos that made it - twins share cosaves
     for rename_paths, *_ in paths_per_file.values():
         if copy and keep and all(done[p] for p in rename_paths):
@@ -1712,7 +1718,7 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
                 # disabled twin their cosaves
                 done[p] = False
             elif did_run[p] and new not in done_dsts and _left_copy(
-                    old, new, pre_ids):
+                    old, new, pre_ids, moved_out):
                 _remove_copy(new)
 
 class DataStore(DataDict):
