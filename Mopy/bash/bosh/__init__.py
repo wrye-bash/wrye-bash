@@ -1621,14 +1621,18 @@ def _holds(p, fid) -> bool:
 
 def _moved(old: Path, new: Path, pre_ids, chained) -> bool:
     """Whether moving old to new went through, as far as we can tell: new
-    exists and old is gone - its file can only have gone to new. A move
-    across volumes copies then deletes, so a failed one may leave both, the
-    copy maybe partial: not done - unless a later pair of the batch moved
-    into old (chained). Then new must be another file than before, as must
-    old - and have the size and mtime old had, if new existed before. File
-    IDs and devices alone can change (FAT, network drives, remounts)."""
+    exists and old is gone - its file can only have gone to new, unless new
+    is still the file it was, and not one with old's size and mtime (another
+    program removed old). A move across volumes copies then deletes, so a
+    failed one may leave both, the copy maybe partial: not done - unless a
+    later pair of the batch moved into old (chained). Then new must be
+    another file than before, as must old - and have the size and mtime old
+    had, if new existed before. File IDs and devices alone can change (FAT,
+    network drives, remounts)."""
     if not new.exists(): return False
-    if not old.exists(): return True
+    if not old.exists():
+        return new not in pre_ids or not _same_file(new, pre_ids) or _holds(
+            new, pre_ids.get(old))
     return old in chained and not (_same_file(new, pre_ids) or _same_file(
         old, pre_ids)) and (new not in pre_ids or _holds(new, pre_ids.get(
         old))) # else only this pair can have created new
