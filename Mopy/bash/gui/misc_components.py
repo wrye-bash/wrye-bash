@@ -450,8 +450,11 @@ class GlobalMenu(_AEvtHandler):
             menu_processor)
         self._on_menu_closed = Link.Frame._evt_handler(_wx.EVT_MENU_CLOSE,
             menu_processor)
+        self._on_menu_highlight = Link.Frame._evt_handler(
+            _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()])
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
+        self._on_menu_highlight.subscribe(self._handle_menu_highlight)
         self._categories = {}
 
     def categories_equal(self, new_categories: list[str]):
@@ -470,6 +473,7 @@ class GlobalMenu(_AEvtHandler):
         this if you want to replace the global menu at runtime."""
         self._on_menu_opened.unsubscribe(self._handle_menu_opened)
         self._on_menu_closed.unsubscribe(self._handle_menu_closed)
+        self._on_menu_highlight.unsubscribe(self._handle_menu_highlight)
 
     def set_categories(self, all_categories: list[str]):
         """Creates dropdowns for all specified categories, discarding existing
@@ -510,6 +514,7 @@ class GlobalMenu(_AEvtHandler):
             # checked/enabled/appended state of links will depend on the
             # current state of WB itself.
             for old_menu_item in wx_menu.GetMenuItems():
+                wx_menu.Unbind(_wx.EVT_MENU, old_menu_item) # see ItemLink
                 wx_menu.DestroyItem(old_menu_item)
             populate_cb(wx_menu)
 
@@ -517,6 +522,15 @@ class GlobalMenu(_AEvtHandler):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
             Links.Popup = None
+
+    def _handle_menu_highlight(self, item_id):
+        """Internal callback, shows the help of the item hovered in a menu."""
+        ##: de-wx! move links to gui
+        from ..balt import Link
+        if Links.Popup:
+            item = Links.Popup.FindItemById(item_id)
+            Link.Frame.set_status_info(item.GetHelp() if item else '')
+        return EventResult.FINISH # wx would show it in the first field too
 
 class Dragger(_AComponent):
     """Class that supports a drag and drop operation on one of its elements."""

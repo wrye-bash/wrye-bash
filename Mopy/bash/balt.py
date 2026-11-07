@@ -1459,8 +1459,7 @@ class ItemLink(Link):
     """Create and append a wx menu item.
 
     Subclasses MUST define _text (preferably class) attribute and should
-    override _help. Registers the Execute() and ShowHelp methods on menu events
-    """
+    override _help. Registers the Execute() method on menu events."""
     kind = wx.ITEM_NORMAL # The default in wx.MenuItem(... kind=...)
     _help = u''           # The tooltip to show at the bottom of the GUI
     _keyboard_hint = ''   # The keyboard shortcut hint to show, if any
@@ -1494,13 +1493,8 @@ class ItemLink(Link):
         # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
         menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
                                self.__class__.kind)
-        # If the menu comes with a parent window (i.e. from the global menu),
-        # then use that for binding. Otherwise, use the parent window we got
-        # passed in (i.e. for column links, context menus, etc.)
-        if not (bind_parent := menu.GetWindow()):
-            bind_parent = _AComponent._resolve(window)
-        bind_parent.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
-        Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
+        # wx tries the item's menu first - the binding dies with the menu
+        menu.Bind(wx.EVT_MENU, self.__Execute, menuItem)
         menu.Append(menuItem)
         return menuItem
 
@@ -1514,13 +1508,6 @@ class ItemLink(Link):
     def Execute(self):
         """Event: link execution."""
         raise NotImplementedError
-
-    @staticmethod
-    def ShowHelp(event): # <wx._core.MenuEvent>
-        """Hover over an item, set the statusbar text"""
-        if Links.Popup:
-            item = Links.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
-            Link.Frame.set_status_info(item.GetHelp() if item else u'')
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
