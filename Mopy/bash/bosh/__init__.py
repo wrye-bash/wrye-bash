@@ -1632,6 +1632,23 @@ def _moved(old: Path, new: Path, pre_ids, chained) -> bool:
     return old in chained and not (_same_file(new, pre_ids) or _same_file(
         old, pre_ids)) and _holds(new, pre_ids.get(old))
 
+def _left_copy(old: Path, new: Path, pre_ids) -> bool:
+    """Whether new holds a copy of old that a failed move left - moves
+    across volumes copy, then delete old, which must still be the file it
+    was - and nothing else: new did not exist before. A folder copy must
+    only hold files old still has: deleting old's stops at the first error,
+    and a folder's identity misses what it contains."""
+    if new in pre_ids or not new.exists() or not _same_file(old, pre_ids):
+        return False
+    if not new.is_dir(): return True
+    errors = [] # can't tell - keep the copy
+    for root, _dirs, files in os.walk(new, onerror=errors.append):
+        rel = os.path.relpath(root, new)
+        for f in files:
+            if not os.path.lexists(os.path.join(old, rel, f)):
+                return False
+    return not errors
+
 def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
                    keep=True):
     """The file operation of rename_operation failed: keep the infos that
@@ -1685,9 +1702,7 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
                 # for the infos sharing the pair - like a save and its
                 # disabled twin their cosaves
                 done[p] = False
-            elif did_run[p] and new not in pre_ids and new.exists() and \
-                    _same_file(old, pre_ids):
-                # a failed move across volumes may have left a copy
+            elif did_run[p] and _left_copy(old, new, pre_ids):
                 _remove_copy(new)
 
 class DataStore(DataDict):
