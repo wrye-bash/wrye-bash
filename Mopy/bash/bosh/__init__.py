@@ -1674,6 +1674,10 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
     # a chained batch is all or nothing - else Data could end up without
     # Oblivion.esm
     keep = keep and (not chained or all(done.values()))
+    # where the pairs that went through moved to - cosaves are named by
+    # body, so saves of two bodies renamed to X.ess and X.esr both move their
+    # cosave to X.obse
+    done_dsts = {new for (_old, new), d in done.items() if d}
     kept = set() # the copies of the infos that made it - twins share cosaves
     for rename_paths, *_ in paths_per_file.values():
         if copy and keep and all(done[p] for p in rename_paths):
@@ -1707,7 +1711,8 @@ def _check_renamed(paths_per_file, ran, pre_ids, chained, *, copy=False,
                 # for the infos sharing the pair - like a save and its
                 # disabled twin their cosaves
                 done[p] = False
-            elif did_run[p] and _left_copy(old, new, pre_ids):
+            elif did_run[p] and new not in done_dsts and _left_copy(
+                    old, new, pre_ids):
                 _remove_copy(new)
 
 class DataStore(DataDict):
