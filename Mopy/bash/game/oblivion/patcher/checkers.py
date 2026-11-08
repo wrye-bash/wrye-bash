@@ -26,9 +26,10 @@ import re
 from collections import defaultdict
 from itertools import chain
 
-from ._shared import ExSpecial, cobl_main
+from . import cobl_main, ExSpecial
 from .... import bush
 from ....brec import FormId, RecordType, null4, null3, null2
+from ....patcher.config_patchers import PatcherConfig
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
@@ -46,23 +47,12 @@ _effect_alchem = (
 _book_fids = {FormId.from_tuple((cobl_main, book_data[1]))
               for book_data in chain(_ingred_alchem, _effect_alchem)}
 
-class CoblCatalogsPatcher(ExSpecial):
-    """Updates COBL alchemical catalogs."""
-    patcher_name = _(u'Cobl Catalogs')
-    patcher_desc = u'\n\n'.join(
-        [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
-         _(u'Will only run if Cobl Main.esm is loaded.')])
-    _config_key = u'AlchemicalCatalogs'
+class _CoblCatalogsPatcher(ExSpecial):
     _read_sigs = (b'BOOK', b'INGR')
     _filter_in_patch = True
 
-    @classmethod
-    def gui_cls_vars(cls):
-        cls_vars = super(CoblCatalogsPatcher, cls).gui_cls_vars()
-        return cls_vars.update({u'default_isEnabled': True}) or cls_vars
-
     def __init__(self, p_name, p_file):
-        super(CoblCatalogsPatcher, self).__init__(p_name, p_file)
+        super().__init__(p_name, p_file)
         self.isActive = cobl_main in p_file.load_dict
         self.id_ingred = {}
 
@@ -157,23 +147,23 @@ class CoblCatalogsPatcher(ExSpecial):
         log('* ' + _('Effects Cataloged: %(total_changed)d') % {
             'total_changed': len(effect_ingred)})
 
+class CoblCatalogsPatcher(PatcherConfig):
+    """Updates COBL alchemical catalogs."""
+    patcher_name = _('Cobl Catalogs')
+    patcher_desc = '\n\n'.join(
+        [_("Update COBL's catalogs of alchemical ingredients and effects."),
+         _('Will only run if Cobl Main.esm is loaded.')])
+    _config_key = 'AlchemicalCatalogs'
+    patcher_type = _CoblCatalogsPatcher
+    isEnabled = True
+
 #------------------------------------------------------------------------------
 _ob_path = bush.game.master_file
-class SEWorldTestsPatcher(ExSpecial):
-    """Suspends Cyrodiil quests while in Shivering Isles."""
-    patcher_name = _('SEWorld Tests')
-    patcher_desc = _("Suspends Cyrodiil quests while in Shivering Isles. "
-                     "I.e. re-instates GetPlayerInSEWorld tests as necessary.")
-    _config_key = 'SEWorldEnforcer'
+class _SEWorldTestsPatcher(ExSpecial):
     _read_sigs = (b'QUST',)
 
-    @classmethod
-    def gui_cls_vars(cls):
-        cls_vars = super(SEWorldTestsPatcher, cls).gui_cls_vars()
-        return cls_vars.update({u'default_isEnabled': True}) or cls_vars
-
     def __init__(self, p_name, p_file):
-        super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
+        super().__init__(p_name, p_file)
         self.cyrodiilQuests = set()
         p_file.update_read_factories(self._read_sigs, [_ob_path])
 
@@ -225,3 +215,12 @@ class SEWorldTestsPatcher(ExSpecial):
         log.setHeader(f'= {self._patcher_name}')
         log('===' + _('Quests Patched: %(total_changed)d') % {
             'total_changed': len(patched)})
+
+class SEWorldTestsPatcher(PatcherConfig):
+    """Suspends Cyrodiil quests while in Shivering Isles."""
+    patcher_name = _('SEWorld Tests')
+    patcher_desc = _("Suspends Cyrodiil quests while in Shivering Isles. "
+                     "I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+    _config_key = 'SEWorldEnforcer'
+    patcher_type = _SEWorldTestsPatcher
+    isEnabled = True

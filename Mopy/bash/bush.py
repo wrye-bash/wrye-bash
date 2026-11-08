@@ -48,13 +48,6 @@ _allGames: dict[str, type[GameInfo]] = {}
 # store -> (game display name -> paths list)
 _game_stores: dict[str, dict[str, list[Path]]] = defaultdict(dict)
 
-def reset_bush_globals():
-    global game
-    global ws_info
-    game = ws_info = None
-    for d in (_allGames, _game_stores):
-        d.clear()
-
 def _print_found_games(skip_ws_games, msg):
     """Formats and prints the specified dictionary of game detections in a
     human-readable way."""
@@ -80,7 +73,11 @@ def _print_found_games(skip_ws_games, msg):
 def _supportedGames(skip_ws_games=False):
     """Set games supported by Bash and return their paths from the registry."""
     # rebuilt cache
-    reset_bush_globals()
+    global game, ws_info
+    game = ws_info = None
+    for d in (_allGames, _game_stores, foundGames):
+        d.clear()
+    bass.bash_dirs_initialized = False # it is set in GameInfo.__init__
     # Detect known games from the registry and Windows Store
     for _importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
         if not ispkg: continue # game support modules are packages

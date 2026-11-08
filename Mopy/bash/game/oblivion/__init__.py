@@ -1208,16 +1208,15 @@ class AOblivionGameInfo(PatchGame):
 
     @classmethod
     def _dynamic_import_modules(cls, package_name):
-        super(AOblivionGameInfo, cls)._dynamic_import_modules(package_name)
-        from .patcher import checkers, preservers
-        cls.gameSpecificPatchers = {
-            u'CoblCatalogs': checkers.CoblCatalogsPatcher,
-            u'SEWorldTests': checkers.SEWorldTestsPatcher, }
-        cls.gameSpecificListPatchers = {
-            u'CoblExhaustion': preservers.CoblExhaustionPatcher,
-            u'MorphFactions': preservers.MorphFactionsPatcher, }
-        cls.game_specific_import_patchers = {
-            u'ImportRoads': preservers.ImportRoadsPatcher, }
+        super()._dynamic_import_modules(package_name)
+        from .patcher import checkers, preservers, OblivionLeveledLists
+        cls.game_specific_patchers = {
+            'CoblCatalogs': checkers.CoblCatalogsPatcher,
+            'SEWorldTests': checkers.SEWorldTestsPatcher,
+            'CoblExhaustion': preservers.CoblExhaustionPatcher,
+            'MorphFactions': preservers.MorphFactionsPatcher,
+            'ImportRoads': preservers.ImportRoadsPatcher,
+            'LeveledLists': OblivionLeveledLists}
 
     @classmethod
     def init(cls, _package_name=None):
