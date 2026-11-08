@@ -1000,7 +1000,9 @@ class ModInfo(_WithMastersInfo):
                 __known_missing.add(k)
                 deprint(f'{self.fn_key}: {", ".join(missing)} found neither '
                         f'loose nor in the BSAs scanned: {scanned or "none"}')
-            return True
+            # Starfield's blueprint plugins may ship without strings and work
+            # all the same (blueprintships-sfta06.esm) - don't warn about them
+            return not getattr(self.header.flags1, 'blueprint_flag', False)
         return False
 
     def hasResources(self):
