@@ -3438,6 +3438,13 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Actors.Factions</td>
+            <td>Split into Actors.Factions.Add, Actors.Factions.Change and
+                Actors.Factions.Remove. The old Actors.Factions tag now
+                behaves like all three tags combined - its changes are merged
+                with those of the other tagged plugins.</td>
+        </tr>
+        <tr>
             <td>Actors.Perks.Add</td>
             <td>Older name for NPC.Perks.Add.</td>
         </tr>
@@ -3696,21 +3703,28 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Actors.Factions</td>
-            <td>Changes creature and NPC factions.</td>
-            <td>Addition or removal of a faction, or change of faction rank in
-                (NPC_) Non-Player Character or (CREA) Creature
+            <td>Actors.Factions.Add</td>
+            <td>Adds creature and NPC factions.</td>
+            <td>Additions of (SNAM) Faction subrecords in (NPC_) Non-Player
+                Character or (CREA) Creature
                 (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3
-                    &amp; Fallout&colon; New Vegas only</strong>) records.
-                <ul>
-                    <li>Factions
-                        <ul>
-                            <li>(SNAM) Faction</li>
-                            <li>(SNAM) Faction - Rank</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
+                    &amp; Fallout&colon; New Vegas only</strong>) records.</td>
+        </tr>
+        <tr>
+            <td>Actors.Factions.Change</td>
+            <td>Changes creature and NPC faction ranks.</td>
+            <td>Changes to the rank in (SNAM) Faction subrecords in (NPC_)
+                Non-Player Character or (CREA) Creature
+                (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3
+                    &amp; Fallout&colon; New Vegas only</strong>) records.</td>
+        </tr>
+        <tr>
+            <td>Actors.Factions.Remove</td>
+            <td>Removes creature and NPC factions.</td>
+            <td>Removal of (SNAM) Faction subrecords from (NPC_) Non-Player
+                Character or (CREA) Creature
+                (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3
+                    &amp; Fallout&colon; New Vegas only</strong>) records.</td>
         </tr>
         <tr>
             <td>Actors.RecordFlags</td>

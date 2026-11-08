@@ -214,25 +214,26 @@ class ListPatcher(APatcher):
 
     def _filter_csv_fids(self, parser_instance, loaded_csvs):
         # Filter out any entries that don't actually have data or whose
-        # record signatures do not appear in _parser_sigs - these might not
+        # record signatures do not appear in parser_sigs - these might not
         # always be a subset of read_sigs for instance CoblExhaustionPatcher
         # which reads b'FACT' but _read_sigs is b'SPEL'
-        rec_att = {*parser_instance._parser_sigs}
+        rec_att = {*parser_instance.parser_sigs}
         sig_data = parser_instance.id_stored_data
         if s := (sig_data.keys() - rec_att):
             deprint(f'{self.getName()}: {s} unhandled signatures loaded from '
                     f'{loaded_csvs}')
+            sig_data = {k: v for k, v in sig_data.items() if k in rec_att}
         ##: make sure k is always bytes and drop encode below
         earlier_loading = self.patchFile.all_plugins
         filtered_dict = {k.encode('ascii') if isinstance(k, str) else k: v for
-            k, d in sig_data.items() if (k in rec_att) and (v := {f: j for
-                f, j in d.items() if f.mod_fn in earlier_loading})}
+            k, d in sig_data.items() if (v := {f: j for f, j in d.items() if
+                                               f.mod_fn in earlier_loading})}
         return filtered_dict
 
     @property
     def _parser_instance(self):
         return self._csv_parser and self._csv_parser(
-            self.patchFile.pfile_aliases, called_from_patcher=True)
+            self.patchFile.pfile_aliases)
 
 class CsvListPatcher(_HandleAliases, ListPatcher):
     """List patcher that is-a CsvParser - we could change this to has-a,

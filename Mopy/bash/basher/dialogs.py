@@ -968,12 +968,12 @@ class ListDependentDialog(_AItemHighlightDialog):
     title = _('Dependent Plugins')
 
 #------------------------------------------------------------------------------
-class AImportOrderParser(CsvParser):
+class APackageOrderParser(CsvParser):
     """Base class for export/import package order-related classes."""
     _csv_header = _('Package'), (_('Installed? (%(inst_y)s/%(inst_n)s)')
                                  % {'inst_y': 'Y', 'inst_n': 'N'})
 
-class ImportOrderDialog(DialogWindow, AImportOrderParser):
+class ImportOrderDialog(DialogWindow, APackageOrderParser):
     """Dialog shown when importing package order."""
     title = _('Import Order')
     _key_to_import = {
