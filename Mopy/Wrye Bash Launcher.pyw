@@ -21,7 +21,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module starts the Wrye Bash application in GUI mode. It checks the
 Python version and shows the errors of importing bash, so it must only use
 the standard library - and syntax that old Pythons can parse."""
@@ -39,15 +38,18 @@ _MIN_PYTHON, _MAX_PYTHON = (3, 11), (4,)
 def _boot_failed(msg):
     """Show msg in a popup, then exit - for the errors that bash could not
     show with wx, or importing bash itself."""
-    if sys.platform == 'win32': # the standalone does not bundle tkinter
-        from ctypes import windll # 0x50010: error icon, foreground, topmost
-        windll.user32.MessageBoxW(None, msg, 'Wrye Bash Error', 0x50010)
+    # not stderr, which tees into the BashBugDump, uncensored - and
+    # __stderr__ is None under pythonw
+    if sys.__stderr__: sys.__stderr__.write(msg + '\n')
+    try:
+        import tkinter # may not be installed (python3-tk), needs a display
+    except ImportError: # the standalone does not bundle it
+        if sys.platform == 'win32': # 0x50010: error icon, foreground, topmost
+            from ctypes import windll
+            windll.user32.MessageBoxW(None, msg, 'Wrye Bash Error', 0x50010)
         sys.exit(1)
-    # tkinter may not be installed (python3-tk) and needs a display - not
-    # stderr, which also writes to the BashBugDump, uncensored
-    sys.__stderr__.write(msg + '\n')
-    import tkinter
     root = tkinter.Tk() ##: on macos this crashes
+    root.attributes('-topmost', True) # a hidden popup holds the mutex
     root.title('Wrye Bash Error')
     text = tkinter.Text(root)
     text.insert(tkinter.END, msg)
