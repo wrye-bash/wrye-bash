@@ -428,11 +428,12 @@ class GlobalMenu(_AEvtHandler):
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
     _native_widget: _wx.MenuBar
+    _categories: dict[str, _GMCategory]
 
     class _GMCategory(_wx.Menu):
         """wx-derived class used to differentiate between events on regular
         menus and categories and to provide the category label at runtime."""
-        def __init__(self, cat_lbl):
+        def __init__(self, cat_lbl: str):
             super().__init__()
             self.category_label = cat_lbl
 
@@ -449,14 +450,17 @@ class GlobalMenu(_AEvtHandler):
             menu_processor)
         self._on_menu_closed = Link.Frame._evt_handler(_wx.EVT_MENU_CLOSE,
             menu_processor)
+        self._on_menu_highlight = Link.Frame._evt_handler(
+            _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()])
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
+        self._on_menu_highlight.subscribe(self._handle_menu_highlight)
+        self._categories = {}
 
     def categories_equal(self, new_categories: list[str]):
         """Checks if the categories currently shown in the GUI match the
         specified ones."""
-        return new_categories == [self._unescape(x[1])
-                                  for x in self._native_widget.GetMenus()]
+        return new_categories == [*self._categories]
 
     def register_category_handler(self, cat_label: str, cat_handler):
         """Registers the specified handler for the specified category. The
@@ -469,13 +473,20 @@ class GlobalMenu(_AEvtHandler):
         this if you want to replace the global menu at runtime."""
         self._on_menu_opened.unsubscribe(self._handle_menu_opened)
         self._on_menu_closed.unsubscribe(self._handle_menu_closed)
+        self._on_menu_highlight.unsubscribe(self._handle_menu_highlight)
 
     def set_categories(self, all_categories: list[str]):
         """Creates dropdowns for all specified categories, discarding existing
         ones in the process. It has to be done like this to avoid changing the
         GUI's layout while categories are added to/removed from it."""
-        self._native_widget.SetMenus([(self._GMCategory(c), self._escape(c))
-                                      for c in all_categories])
+        self._categories = {c: self._GMCategory(c) for c in all_categories}
+        self._native_widget.SetMenus([(m, self._escape(c))
+                                      for c, m in self._categories.items()])
+
+    def populate_immediately(self, menu_category: str, populate_cb):
+        """Immediately populate the menu of the given category using the given
+        callback."""
+        self._populate_menu(self._categories[menu_category], populate_cb)
 
     def _handle_menu_opened(self, wx_menu):
         """Internal callback, does the heavy lifting. Also handles status bar
@@ -486,25 +497,40 @@ class GlobalMenu(_AEvtHandler):
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
+        # Need to set this, otherwise help text won't be shown
+        Links.Popup = wx_menu
+        try:
+            populate_cb = self._category_handlers[wx_menu.category_label]
+        except KeyError:
+            raise RuntimeError(f"A GlobalMenu handler is missing for "
+                               f"category '{wx_menu.category_label}'.")
+        self._populate_menu(wx_menu, populate_cb)
+
+    def _populate_menu(self, wx_menu: _wx.Menu, populate_cb):
+        """Internal helper to populate a single menu."""
         # If we don't pause here, the GUI will flicker like crazy
         with self.pause_drawing():
             # Clear the menu and repopulate it. Have to do this JIT, since the
             # checked/enabled/appended state of links will depend on the
             # current state of WB itself.
             for old_menu_item in wx_menu.GetMenuItems():
+                wx_menu.Unbind(_wx.EVT_MENU, old_menu_item) # see ItemLink
                 wx_menu.DestroyItem(old_menu_item)
-            # Need to set this, otherwise help text won't be shown
-            Links.Popup = wx_menu
-            try:
-                self._category_handlers[wx_menu.category_label](wx_menu)
-            except KeyError:
-                raise RuntimeError(f"A GlobalMenu handler is missing for "
-                                   f"category '{wx_menu.category_label}'.")
+            populate_cb(wx_menu)
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
         if isinstance(wx_menu, self._GMCategory):
             Links.Popup = None
+
+    def _handle_menu_highlight(self, item_id):
+        """Internal callback, shows the help of the item hovered in a menu."""
+        ##: de-wx! move links to gui
+        from ..balt import Link
+        if Links.Popup:
+            item = Links.Popup.FindItemById(item_id)
+            Link.Frame.set_status_info(item.GetHelp() if item else '')
+        return EventResult.FINISH # wx would show it in the first field too
 
 class Dragger(_AComponent):
     """Class that supports a drag and drop operation on one of its elements."""

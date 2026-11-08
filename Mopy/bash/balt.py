@@ -531,6 +531,7 @@ class UIList(PanelWin):
         self.__gList.on_mouse_left_dclick.subscribe(self.OnDClick)
         self.__gList.on_item_selected.subscribe(self._handle_select)
         self.__gList.on_mouse_left_down.subscribe(self._handle_left_down)
+        self._renaming: list[FName] = [] # see OnBeginEditLabel
         #--Mouse movement
         self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
@@ -902,15 +903,18 @@ class UIList(PanelWin):
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
         uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
+        # Clicking another item to end the edit selects it before the edit
+        # ends (on wxGTK at least) - remember what we are renaming
+        self._renaming = self.GetSelected()
         return EventResult.FINISH  ##: needed?
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Should only be subscribed if _editLabels==True (Saves/BAIN/Screens).
         """
+        renaming, self._renaming = self._renaming, []
         if is_edit_cancelled: return EventResult.FINISH
-        selected = [*self.data_store.filter_essential(
-            None or self.GetSelected()).values()]
+        selected = [*self.data_store.filter_essential(renaming).values()]
         if not selected:
             # Sometimes seems to happen on wxGTK, simply abort
             return EventResult.CANCEL
@@ -1295,16 +1299,21 @@ class UIList(PanelWin):
             glb_menu.set_categories([])
             return
         tab_categories = list(self.global_links)
-        # Check if we have to change category names
-        if not glb_menu.categories_equal(tab_categories):
+        categories_changed = not glb_menu.categories_equal(tab_categories)
+        if categories_changed:
             # Release and recreate the global menu to avoid GUI flicker
             glb_menu.release_bindings()
             glb_menu = GlobalMenu()
             glb_menu.set_categories(tab_categories)
             Link.Frame.set_global_menu(glb_menu)
         for curr_cat in tab_categories:
-            Link.Frame.global_menu.register_category_handler(curr_cat, partial(
-                self._populate_category, curr_cat))
+            populate_cat = partial(self._populate_category, curr_cat)
+            glb_menu.register_category_handler(curr_cat, populate_cat)
+            if categories_changed:
+                # If we do not populate immediately, then on wxGTK (Linux)
+                # we will show an empty menu when the global menu is first
+                # opened (or sometimes an outdated one when we switch tabs)
+                glb_menu.populate_immediately(curr_cat, populate_cat)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1450,8 +1459,7 @@ class ItemLink(Link):
     """Create and append a wx menu item.
 
     Subclasses MUST define _text (preferably class) attribute and should
-    override _help. Registers the Execute() and ShowHelp methods on menu events
-    """
+    override _help. Registers the Execute() method on menu events."""
     kind = wx.ITEM_NORMAL # The default in wx.MenuItem(... kind=...)
     _help = u''           # The tooltip to show at the bottom of the GUI
     _keyboard_hint = ''   # The keyboard shortcut hint to show, if any
@@ -1480,18 +1488,13 @@ class ItemLink(Link):
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
         full_link_text = _AComponent._escape(self.link_text)
-        if self._keyboard_hint:
-            full_link_text += f'\t{self._keyboard_hint}'
+        if self._keyboard_hint: # \u200b: a hint, not a wx accelerator
+            full_link_text += f'\t{self._keyboard_hint}\u200b'
         # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
         menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
                                self.__class__.kind)
-        # If the menu comes with a parent window (i.e. from the global menu),
-        # then use that for binding. Otherwise, use the parent window we got
-        # passed in (i.e. for column links, context menus, etc.)
-        if not (bind_parent := menu.GetWindow()):
-            bind_parent = _AComponent._resolve(window)
-        bind_parent.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
-        Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
+        # wx tries the item's menu first - the binding dies with the menu
+        menu.Bind(wx.EVT_MENU, self.__Execute, menuItem)
         menu.Append(menuItem)
         return menuItem
 
@@ -1505,13 +1508,6 @@ class ItemLink(Link):
     def Execute(self):
         """Event: link execution."""
         raise NotImplementedError
-
-    @staticmethod
-    def ShowHelp(event): # <wx._core.MenuEvent>
-        """Hover over an item, set the statusbar text"""
-        if Links.Popup:
-            item = Links.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
-            Link.Frame.set_status_info(item.GetHelp() if item else u'')
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""

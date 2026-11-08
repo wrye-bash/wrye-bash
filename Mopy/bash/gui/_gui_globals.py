@@ -31,6 +31,8 @@ _gui_images = {} # todo defaultdict with fallback? mark final
 _image_resource_dir = empty_path
 _color_checks = None
 _installer_icons = None
+# The 'x' icon, in the status bar icon sizes - filled by init_image_resources
+ERROR_ICONS = []
 
 def init_image_resources(images_dir: _Path):
     global _image_resource_dir, _color_checks, _installer_icons
@@ -117,9 +119,10 @@ def init_image_resources(images_dir: _Path):
     # DocumentViewer, Restart and help
     for fname, pix in product(('reload', 'help'), pixs):
         _gui_images[f'{fname}.{pix}'] = _icc(f'{fname}.svg', pix)
-    # Checkmark/Cross
+    # Checkmark/Cross - the cross in the status bar icon sizes too
     _gui_images['checkmark.16'] = _icc('checkmark.svg')
-    _gui_images['error_cross.16'] = _icc('error_cross.svg')
+    ERROR_ICONS[:] = [_icc('error_cross.svg', pix) for pix in pixs]
+    _gui_images['error_cross.16'] = ERROR_ICONS[0]
     # Minus/Plus for the Bash Tags popup
     _gui_images['minus.16'] = _icc('minus.svg')
     _gui_images['plus.16'] = _icc('plus.svg')
