@@ -3077,7 +3077,8 @@ class ScreensList(UIList):
         root, numStr, num, digits = args
         ren_args = []
         for sel_inf in selected:
-            ren_args.append((sel_inf, FName(root + numStr + sel_inf.fn_ext)))
+            ren_args.append(
+                (sel_inf, FName(root + numStr + sel_inf.fn_key.fn_ext)))
             numStr = numStr and str(num := num + 1).zfill(digits)
         return ren_args
 

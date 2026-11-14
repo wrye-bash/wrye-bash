@@ -491,17 +491,19 @@ class Installer(ListInfo):
     @staticmethod
     def goodDlls(force_recalc=False):
         if force_recalc:
-            Installer._goodDlls.clear()
+            # may be the same dict as the one in settings
             dlls = {k: [[FName(str(str(a))), b, c] for a, b, c in v] for k, v
                     in bass.settings['bash.installers.goodDlls'].items()}
+            Installer._goodDlls.clear()
             Installer._goodDlls.update(dlls)
         return Installer._goodDlls
     @staticmethod
     def badDlls(force_recalc=False):
         if force_recalc:
-            Installer._badDlls.clear()
+            # may be the same dict as the one in settings
             dlls = {k: [[FName(str(str(a))), b, c] for a, b, c in v] for k, v
                     in bass.settings['bash.installers.badDlls'].items()}
+            Installer._badDlls.clear()
             Installer._badDlls.update(dlls)
         return Installer._badDlls
     # while checking for skips process some installer attributes

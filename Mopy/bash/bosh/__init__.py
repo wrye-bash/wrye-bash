@@ -1082,8 +1082,8 @@ class ModInfo(_WithMastersInfo):
         mod_infos = self._store()
         if rename_dir == (st_dir := mod_infos.store_dir) or renaming:
             new_ghost = old_new_paths[0][1] + '.ghost' # Path.__add__!
-            ghost_dest = (mod_inf := mod_infos.get( # restoring backup
-                self.fn_key)) and mod_inf.is_ghost
+            # a backup or a copy over a plugin takes its ghost state
+            ghost_dest = getattr(mod_infos.get(new_name), 'is_ghost', False)
             if self.is_ghost or ghost_dest: # add ghost extension to dest path
                 old_new_paths[0] = self.abs_path, new_ghost
             elif renaming:
