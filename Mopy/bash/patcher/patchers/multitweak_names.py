@@ -32,6 +32,7 @@ from .base import CustomChoiceTweak, IndexingTweak, MultiTweaker, \
     MultiTweakItem
 from ... import bush
 from ...bolt import RecPath, build_esub, setattr_deep
+from ...brec import RecordType
 from ...exception import BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')
@@ -149,22 +150,23 @@ class _ANamesTweak(CustomChoiceTweak):
         """Does the actual renaming, returning the new name as its result."""
         raise NotImplementedError
 
-class _AMgefNamesTweak(_ANamesTweak):
+class _AMgefNamesTweak_Tes4(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
     Oblivion-specific."""
-    _tweak_mgef_hostiles = set()
-    _look_up_mgef = None
+    _look_up_mgef = None # effect code -> MGEF record of the load order
 
     def prepare_for_tweaking(self, patch_file):
-        self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
-        super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
+        super().prepare_for_tweaking(patch_file)
+        # The patch file keeps every MGEF of the load order (readClasses)
+        self._look_up_mgef = RecordType.sig_to_class[b'MGEF'].index_by_code(
+            patch_file.tops[b'MGEF'])
 
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
         # thoroughly (i.e. during the buildPatch/apply phase)
         old_full = record.full
-        return (old_full and (not self._tweak_mgef_hostiles or
-                old_full != self._exec_rename(record)))
+        return (old_full and (not self._look_up_mgef or
+                              old_full != self._exec_rename(record)))
 
 class _AEffectsTweak_Tes5(IndexingTweak, _ANamesTweak):
     """Skyrim implementation of _AEffectsTweak's API."""
@@ -394,7 +396,7 @@ class _ANamesTweak_Ingestibles(_ANamesTweak):
     _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ']
 
 class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
-                                  _AMgefNamesTweak):
+                                  _AMgefNamesTweak_Tes4):
     tweak_tip = _(u'Label ingestibles (potions and drinks) to sort by type '
                   u'and effect.')
     _example_item = _('Poison of Illness')
@@ -407,8 +409,9 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
         if record.flags.alch_is_food:
             return '.' + wip_name
         else:
-            poison_tag = 'X' if record.is_harmful(self._tweak_mgef_hostiles) else ''
-            effect_label = poison_tag + record.get_spell_school()
+            poison_tag = 'X' if record.is_harmful(self._look_up_mgef) else ''
+            effect_label = poison_tag + record.get_spell_school(
+                self._look_up_mgef)
             return self.chosen_format % effect_label + wip_name
 
 class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
@@ -441,7 +444,7 @@ class _ANamesTweak_Scrolls(IndexingTweak, _ANamesTweak):
     _example_item = _('Fireball')
     _example_code = 'D'
 
-class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
+class NamesTweak_NotesScrolls_Tes4(_ANamesTweak_Scrolls, _AMgefNamesTweak_Tes4):
     """Names tweaker for notes and scrolls - Oblivion only!"""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Sort: Notes/Scrolls')
@@ -462,7 +465,7 @@ class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
         if is_enchanted and u'%s' in magic_format:
             enchantment = self._look_up_ench[rec_ench]
             if enchantment: ##: true?
-                school = enchantment.get_spell_school()
+                school = enchantment.get_spell_school(self._look_up_mgef)
             else: school = 'U' # U: unknown
             # Remove existing label
             wip_name = _re_old_magic_label.sub(u'', wip_name)
@@ -540,7 +543,7 @@ class _ANamesTweak_Spells(_ANamesTweak):
                 wip_name = self.chosen_format + wip_name
         return wip_name
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _AMgefNamesTweak):
+class NamesTweak_Spells_Tes4(_ANamesTweak_Spells, _AMgefNamesTweak_Tes4):
     # Upgrade older format that used different values - we'll probably have to
     # keep this around indefinitely, unfortunately
     def init_tweak_config(self, configs):
@@ -555,7 +558,7 @@ class NamesTweak_Spells(_ANamesTweak_Spells, _AMgefNamesTweak):
                 cleaned_tv.append(t_v.replace('%d', '%02d'))
             tweak_value = tuple(cleaned_tv)
             configs[self.tweak_key] = (is_enabled, tweak_value)
-        super(NamesTweak_Spells, self).init_tweak_config(configs)
+        super().init_tweak_config(configs)
 
 class NamesTweak_Spells_Tes5(_ANamesTweak_Spells, _AEffectsTweak_Tes5): pass
 
