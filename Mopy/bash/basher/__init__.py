@@ -3583,12 +3583,29 @@ class BashFrame(WindowFrame):
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
                                             booting=booting)
         #--WARNINGS----------------------------------------
-        if booting: self.warnTooManyModsBsas()
+        if booting:
+            self.warnTooManyModsBsas()
+            self._warn_imported_launchers()
         self._warn_reset_load_order()
         self.warn_game_ini()
         #--Done (end recursion blocker)
         self.inRefreshData = False
         return EventResult.FINISH
+
+    @balt.conversation
+    def _warn_imported_launchers(self): ##:(734:570)
+        """Tell the user about the tool paths and Apps folder shortcuts that
+        InitStatusBar imported into the launcher settings."""
+        from .links_init import imported_launchers
+        if not imported_launchers: return
+        msg = _('Wrye Bash no longer reads the tool options in %(bash_ini)s, '
+                'nor the shortcuts in %(apps_dir)s. The ones below have been '
+                'imported into its settings - from now on, manage them in the '
+                'Status Bar page of the settings dialog.') % {
+            'bash_ini': 'bash.ini', 'apps_dir': bass.dirs['mopy'].join('Apps')}
+        showWarning(self, '\n\n'.join([msg, '\n'.join(imported_launchers)]),
+                    title=_('Launchers Imported'))
+        imported_launchers.clear()
 
     def _warn_reset_load_order(self):
         if load_order.warn_locked and not bass.inisettings[
