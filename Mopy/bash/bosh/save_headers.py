@@ -42,7 +42,7 @@ from typing import final
 
 import lz4.block
 
-from .. import bolt, load_order, plugin_types
+from .. import bolt, plugin_types
 from ..bolt import FName, cstrip, decoder, deprint, encode, pack_byte, \
     pack_bzstr8, pack_float, pack_int, pack_short, pack_str8, \
     remove_newlines, struct_error, struct_unpack, structs_cache, unpack_byte, \
@@ -101,9 +101,9 @@ class _SaveCompressionType(Enum):
                                              decompressed_size)
         except (zlib.error, lz4.block.LZ4BlockError) as e:
             raise SaveHeaderError(f'{self.name} error while '
-                f'decompressing {self.name.lower}-compressed header: {e!r}')
+                f'decompressing {self.name.lower()}-compressed header: {e!r}')
         if not light_decompression and len(decompressed_data) != decompressed_size:
-            raise SaveHeaderError(f'{self.name.lower}-decompressed header '
+            raise SaveHeaderError(f'{self.name.lower()}-decompressed header '
                 f'size incorrect - expected {decompressed_size}, but got '
                 f'{len(decompressed_data)}.')
         # Wrap the decompressed data in a file-like object and return it
@@ -647,9 +647,49 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         # Call the SaveFileHeader version - *not* the Skyrim one
         return super(SkyrimSaveHeader, self)._do_write_header(ins, out)
 
+class _LazyChunks:
+    """Read-only stream over the chunks an iterator yields - the iterator is
+    only advanced as far as reads and seeks get."""
+    def __init__(self, chunks):
+        self._chunks = chunks
+        self._buf = io.BytesIO()
+        self._buf_size = 0
+
+    def _fill(self, upto=None):
+        """Append chunks to the buffer until it holds upto bytes - or all of
+        them, if upto is None."""
+        if upto is not None and upto <= self._buf_size:
+            return
+        pos = self._buf.tell()
+        self._buf.seek(0, os.SEEK_END)
+        for chunk in self._chunks:
+            self._buf_size += self._buf.write(chunk)
+            if upto is not None and upto <= self._buf_size:
+                break
+        self._buf.seek(pos)
+
+    def read(self, size=-1):
+        self._fill(None if size is None or size < 0 else
+                   self._buf.tell() + size)
+        return self._buf.read(size)
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence == os.SEEK_CUR:
+            offset += self._buf.tell()
+        elif whence == os.SEEK_END:
+            self._fill()
+            offset += self._buf_size
+        self._fill(offset)
+        return self._buf.seek(offset)
+
+    def tell(self):
+        return self._buf.tell()
+
 class _ABcpsSaveHeader(SaveFileHeader):
     """Base class for BCPS savegames, which are entirely compressed and
-    preceded by a 'BCPS' header (Bethesda Compressed Something Something?)."""
+    preceded by a 'BCPS' header (Bethesda Compressed Something Something?).
+    The data is split in chunks of _bcps_chunk_size, compressed one by one -
+    see SFS.bt in Nexus-Mods/StarfieldSaveTool."""
     _bcps_magic = b'BCPS'
     ##: We can't fill these slots due to inheritance layout conflicts, so they
     # have to be filled out in subclasses - really annoying, plus causes
@@ -658,16 +698,15 @@ class _ABcpsSaveHeader(SaveFileHeader):
     _bcps_unpackers = {
         '_bcps_header_version': (00, unpack_int), # version0
         '_bcps_chunkSizesOffset':(00, unpack_int64),
-        ##: What are unknown1 and unknown2?
+        ##: What is unknown1?
         '_bcps_unknown1':       (00, unpack_int64), # unknown0
         '_bcps_comp_location':  (00, unpack_int64), # compressedDataOffset
-        ##: MO2 calls this 'totalSize', but it seems to be much too big for
-        # either the compressed or decompressed size - what is it?
-        '_bcps_unknown2':      (00, unpack_int64), # uncompressedDataSize
-        '_bcps_unknown3':      (00, unpack_int64), # version1 (read as float)
-        '_bcps_decomp_size':   (00, unpack_int64), # unknown1
-        ##: There's a bunch more after this - read as _bcps_rest below. Figure
-        # out what that all is
+        '_bcps_decomp_size':    (00, unpack_int64), # uncompressedDataSize
+        '_bcps_unknown3':       (00, unpack_int64), # version1 (read as float)
+        '_bcps_chunk_size':     (00, unpack_int64), # sizeUncompressedChunks
+        '_bcps_chunk_align':    (00, unpack_int64), # paddingSize
+        ##: There's a bunch more after this - read as _bcps_rest below: an
+        # unknown uint32, b'ZIP ' and the compressed chunk sizes
     }
 
     def load_header(self, ins, load_image=False):
@@ -678,13 +717,30 @@ class _ABcpsSaveHeader(SaveFileHeader):
                                   f'{self.__class__._bcps_magic!r})')
         self._load_from_unpackers(ins, self.__class__._bcps_unpackers)
         self._bcps_rest = ins.read(self._bcps_comp_location - ins.tell())
-        # We're at _bcps_comp_location now, no need to store that twice
-        ins.seek(0, os.SEEK_END)
-        ins_size = ins.tell()
-        ins.seek(self._bcps_comp_location)
-        ins = _SaveCompressionType.ZLIB.decompress_save(ins,
-            ins_size - self._bcps_comp_location, self._bcps_decomp_size)
-        super().load_header(ins, load_image)
+        if self._bcps_chunk_size <= 0 or self._bcps_chunk_align <= 0:
+            raise SaveHeaderError(f'Invalid BCPS chunk size '
+                f'({self._bcps_chunk_size}) or alignment '
+                f'({self._bcps_chunk_align})')
+        # The header and plugin table usually fit in the first chunk -
+        # inflating the whole save would make reading it much slower
+        super().load_header(_LazyChunks(self._inflate_chunks(ins)),
+                            load_image)
+
+    def _inflate_chunks(self, ins):
+        """Yield the decompressed chunks in order - each one is a zlib stream
+        of its own, padded to a multiple of _bcps_chunk_align."""
+        chunk_size = self._bcps_chunk_size
+        comp_start = self._bcps_comp_location
+        for chunk_dex, decomp_start in enumerate(
+                range(0, self._bcps_decomp_size, chunk_size)):
+            ins.seek(self._bcps_chunkSizesOffset + 4 * chunk_dex)
+            comp_size = unpack_int(ins)
+            ins.seek(comp_start)
+            yield _SaveCompressionType.ZLIB.decompress_save(ins, comp_size,
+                min(chunk_size, self._bcps_decomp_size - decomp_start)
+            ).getvalue()
+            comp_start += -(-comp_size // self._bcps_chunk_align) * \
+                self._bcps_chunk_align
 
     ##: Add writing support
 
@@ -725,6 +781,13 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         'plugin_info_unknown2':  (00, unpack_byte),
     }
     _masters_offset = 2
+    # Lowercased plugins that 122 <= formVersion < 140 saves store without
+    # creation metadata - these saves have no flag for it, the game exe had
+    # this list hardcoded (same as MO2 and Nexus-Mods/StarfieldSaveTool). Not
+    # our pinned plugins, those depend on what's installed and grew since
+    _v122_core_plugins = frozenset([b'starfield.esm', b'constellation.esm',
+        b'oldmars.esm', b'blueprintships-starfield.esm', b'sfbgs003.esm',
+        b'sfbgs006.esm', b'sfbgs007.esm', b'sfbgs008.esm'])
 
     def __init__(self, save_inf, **kwargs):
         self._master_info_block_size = {}
@@ -738,9 +801,9 @@ class StarfieldSaveHeader(_ABcpsSaveHeader, _AEslSaveHeader):
         if self._formVersion >= 140:
             has_extra_data = unpack_byte(ins)
             self._master_info_block_size[mas] += 1
-        else:
-            has_extra_data = not (load_order.must_be_active({mas}))
-        if has_extra_data: # 122 <= formVersion < 140
+        else: # 122 <= formVersion < 140
+            has_extra_data = mas.lower() not in self._v122_core_plugins
+        if has_extra_data:
             for __ in range(3): # creationName, creationId, flags
                 self._master_info_block_size[mas] += len(unpack_str16(ins))
             unpack_byte(ins) # achievementCompatible

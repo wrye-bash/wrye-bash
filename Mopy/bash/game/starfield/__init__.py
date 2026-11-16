@@ -97,10 +97,8 @@ class _AStarfieldGameInfo(PatchGame):
     @staticmethod
     def get_fid_class(augmented_masters, in_overlay_plugin):
         # Overlay plugins (whose TES4 record header flags feature an
-        # overlay_flag) can only contain overrides (any non-override records
-        # in them will become injected into either the first plugin in the
-        # master list or the first plugin in the whole LO - probably the
-        # former) TODO(SF) check which of those two is true
+        # overlay_flag) can only contain overrides - any non-override records
+        # in them get injected into the first plugin of their master list
         if not in_overlay_plugin:
             return super(_AStarfieldGameInfo, _AStarfieldGameInfo
                          ).get_fid_class(augmented_masters, in_overlay_plugin)
@@ -139,24 +137,39 @@ class _AStarfieldGameInfo(PatchGame):
         url_tip = 'https://sfse.silverlock.org/'
 
     class Ini(GameInfo.Ini):
-        default_ini_file = 'Starfield.ini' # TODO(SF) verify
+        default_ini_file = 'Starfield.ini'
         default_game_lang = 'en'
-        # TODO(SF) there is no Starfield.ini in My Games, should we somehow
-        #  generate a StarfieldCustom.ini instead? Or will our copying of
-        #  Starfield.ini work?
-        dropdown_inis = ['StarfieldPrefs.ini']
+        # We edit StarfieldCustom.ini - it overrides the Starfield.ini in the
+        # game folder, the default INI, which game updates replace
+        dropdown_inis = ['StarfieldCustom.ini', 'StarfieldPrefs.ini']
         start_dex_keys = {GameInfo.Ini.BSA_MIN: (
             'sResourceIndexFileList', 'sResourceStartUpArchiveList',
-            'sResourceArchiveList',
+            'sResourceArchiveList', 'sResourceArchiveList2',
+            'sResourceEnglishVoiceList', # where this one loads is a guess
         )}
 
     class Ess(GameInfo.Ess):
         ext = '.sfs'
-        has_screenshots = False # TODO(SF) verify
+        has_screenshots = False
 
     class Bsa(GameInfo.Bsa):
         bsa_extension = '.ba2'
         valid_versions = {0x02, 0x03}
+        # The strings of the vanilla plugins are in their Localization BA2s
+        _str_heuristics = tuple(enumerate(('localization', 'main',
+                                           'interface')))
+
+        @classmethod
+        def attached_bsas(cls, av_bsas, plugin_fn, *, for_strings=False,
+                          __re_ship=re.compile(_bp_re, re.I)):
+            attached = super().attached_bsas(av_bsas, plugin_fn)
+            # BlueprintShips-X.esm may have no BA2s of their own and keep their
+            # strings in X's BA2s instead - those get loaded, as they are only
+            # active along with X (see _LoStarfield._get_force_act)
+            if for_strings and (re_ma := __re_ship.match(plugin_fn)):
+                parent_fn = FName(f'{re_ma.group(1)}.esm')
+                attached.extend(super().attached_bsas(av_bsas, parent_fn))
+            return attached
 
     class Psc(GameInfo.Psc):
         source_extensions = {'.psc'}
@@ -369,7 +382,7 @@ class _AStarfieldGameInfo(PatchGame):
         b'LMSW', b'FORC', b'TMLM', b'EFSQ', b'SDLT', b'MTPT', b'CLDF', b'FOGV',
         b'WKMF', b'LGDI', b'PSDC', b'SUNP', b'PMFT', b'TODD', b'AVMD', b'CHAL',
     ]
-    complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'} # TODO(SF) verify
+    complex_groups = {b'CELL', b'WRLD', b'DIAL', b'QUST'}
 
     class _LoStarfield(AsteriskGame):
         force_load_first = tuple(map(FName, (
