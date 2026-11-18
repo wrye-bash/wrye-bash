@@ -1970,7 +1970,6 @@ class BashStatusBar(DnDStatusBar):
         self.add_buttons(*self.all_sb_links.values())
         #--Setup Drag-n-Drop reordering
         self._reset_drag(False)
-        self.moved = False
 
     def add_buttons(self, *links):
         """Add the specified links to all_sb_links and, if missing, to the
@@ -2027,16 +2026,19 @@ class BashStatusBar(DnDStatusBar):
             if button_link._native_widget == native_button:
                 x = mouseEvent.evt_pos[0]
                 # position is 0 at the beginning of the button's _icon_
-                # negative beyond that (on the left) and positive after
-                if x < -4:
+                # negative beyond that (on the left) and positive after - in
+                # pixels, while icon_size is in DIPs
+                border = self._native_widget.FromDIP(4)
+                if x < -border:
                     return max(i - 1, 0), button_link
-                elif x > self.icon_size - 4:
+                elif x > self._native_widget.FromDIP(self.icon_size) - border:
                     return min(i + 1, len(self._visible_buttons) - 1), button_link
                 return i, button_link
         return wx.NOT_FOUND, None
 
     def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
         self.dragging, button_link = self._getButtonIndex(mouse_evnt)
+        self.dragStart = mouse_evnt.evt_pos[0] # a jittery click is no drag
         if wx.Platform == '__WXMSW__':
             button_link._native_widget.CaptureMouse()
         return EventResult.FINISH # we don't skip - blocks EVT_MOTION somehow
@@ -2052,21 +2054,21 @@ class BashStatusBar(DnDStatusBar):
         if button_link._native_widget.HasCapture():
             button_link._native_widget.ReleaseMouse()
         if self.dragging != wx.NOT_FOUND:
+            moved = self.moved
             self._reset_drag()
-            if self.moved:
-                self.moved = False
+            if moved:
                 return EventResult.FINISH
-            else:
-                button_link.sb_click()
+            button_link.sb_click()
 
     def _reset_drag(self, set_cursor=True):
-        self.dragStart = 0
         self.dragging = wx.NOT_FOUND
+        self.moved = False # also if the capture was lost mid drag
         if set_cursor: self.set_cursor()
 
     def _on_drag(self, mouse_evnt, _hittest0):
         if self.dragging != wx.NOT_FOUND:
-            if abs(mouse_evnt.evt_pos[0] - self.dragStart) > 4:
+            if abs(mouse_evnt.evt_pos[0] - self.dragStart) > \
+                    self._native_widget.FromDIP(4):
                 self.moved = True # just lost your chance to click the button
                 self.set_cursor(hand=True)
             over, _ = self._getButtonIndex(mouse_evnt)
