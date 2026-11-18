@@ -434,7 +434,8 @@ class _PathPicker(_AComponent):
     def __init__(self, parent, event_type, use_icon=True, *args, hint='',
                  on_enter=None, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.on_path_changed = self._evt_handler(event_type, lambda e: e.GetPath())
+        self.on_path_changed = self._evt_handler(event_type,
+                                                 lambda e: [e.GetPath()])
         if use_icon:
             ## TODO: Check this looks OK on GTK/OSX, based on the wxPython docs
             # the GTK widget might already have an icon and look odd
