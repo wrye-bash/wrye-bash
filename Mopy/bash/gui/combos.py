@@ -26,12 +26,11 @@ from __future__ import annotations
 
 __author__ = u'Infernio'
 
-from itertools import chain
 from collections.abc import Iterable
 
 import wx as _wx
 
-from .base_components import _AComponent, scaled
+from .base_components import _AComponent
 from .buttons import Button
 from .events import EventResult
 from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
@@ -193,11 +192,6 @@ class ATreeMixin(_AComponent):
         relevant for leaf pages."""
         return True
 
-    def wrap_page_description(self, parent_width: int):
-        """Wraps the description of this page to the parent's width (in
-        DIP)."""
-        #self._page_desc_label.wrap(parent_width)
-
 class TreePanel(_APageComponent):
     """A panel with a tree of options where each leaf corresponds to a
     different subpanel. Note that only a depth of one or two is supported, but
@@ -239,15 +233,12 @@ class TreePanel(_APageComponent):
         :param page_descriptions: A dict mapping page names to descriptions."""
         super(TreePanel, self).__init__(parent)
         self._all_leaf_pages = []
-        self._all_link_pages = []
         for page_name, page_val in dict_sort(tree_geometry):
             page_desc = page_descriptions.get(page_name, u'')
             if isinstance(page_val, dict):
                 # This is not a leaf, add a link page and then the subpages
-                link_page = self._LinkPage(self, page_desc, self.select_page,
-                                           page_name, page_val)
-                self._all_link_pages.append(link_page)
-                self.add_page(link_page, page_name)
+                self.add_page(self._LinkPage(self, page_desc, self.select_page,
+                                             page_name, page_val), page_name)
                 for subpage_name, subpage_type in dict_sort(page_val):
                     if subpage_type.should_appear():
                         new_subpage = subpage_type(self, page_descriptions.get(
@@ -270,35 +261,21 @@ class TreePanel(_APageComponent):
         """Returns a list of all leaf pages in this TreePanel."""
         return self._all_leaf_pages
 
+    def _page_path(self, page_index):
+        """Returns the path to the page at the specified index: its name, after
+        the name of its parent page and a slash if it is a subpage."""
+        page_name = self._native_widget.GetPageText(page_index)
+        parent_index = self._native_widget.GetPageParent(page_index)
+        return page_name if parent_index == _wx.NOT_FOUND else (
+            f'{self._native_widget.GetPageText(parent_index)}/{page_name}')
+
     def select_page(self, page_path):
-        """Scrolls to and selects the page corresponding to the specified path.
-        The path must be a string of the form 'parent/child', where parent is
-        the name of the parent page and child is the name of the child page."""
-        parent_page, sub_page = page_path.split(u'/')
-        ##: wx.TreeCtrl has the worst API ever, this desperately needs wrapping
-        # and some rethinking (plus virtualizing etc.)
-        ##: We have tree_ctrl.Tree now, can we use that here somehow?
-        tree_ctrl = self._native_widget.GetTreeCtrl()
-        root_item = tree_ctrl.GetRootItem()
-        # The root does not actually exist, so look at its first child. The
-        # cookie value is only needed by wx to keep track of the current
-        # iteration, it has no meaning outside of that
-        curr_child, cookie = tree_ctrl.GetFirstChild(root_item)
-        while curr_child.IsOk():
-            # Check if we found the parent page yet
-            if tree_ctrl.GetItemText(curr_child) == parent_page:
-                # Found it - now to look for the child page
-                curr_subchild, sub_cookie = tree_ctrl.GetFirstChild(curr_child)
-                while curr_subchild.IsOk():
-                    if tree_ctrl.GetItemText(curr_subchild) == sub_page:
-                        # Found it - scroll to it and select it
-                        tree_ctrl.ScrollTo(curr_subchild)
-                        tree_ctrl.SelectItem(curr_subchild)
-                        break
-                    curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
-                        curr_child, sub_cookie)
+        """Scrolls to and selects the page corresponding to the specified path
+        - see get_selected_page_path."""
+        for page_index in range(self.page_count):
+            if self._page_path(page_index) == page_path:
+                self._native_widget.SetSelection(page_index)
                 break
-            curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
         # Need to return FINISH, otherwise the browser would try to open it
         return EventResult.FINISH
 
@@ -306,41 +283,6 @@ class TreePanel(_APageComponent):
         """Returns the path to the currently selected page. E.g. if there's a
         page 'Bar' which is a child of the page 'Foo' and 'Bar' is currently
         selected, this would return 'Foo/Bar'."""
-        ##: If you still don't believe me about the terrible API, look how
-        # similar this mess is to the other method up there.
-        tree_ctrl = self._native_widget.GetTreeCtrl()
-        root_item = tree_ctrl.GetRootItem()
-        # The root does not actually exist, so look at its first child. The
-        # cookie value is only needed by wx to keep track of the current
-        # iteration, it has no meaning outside of that
-        curr_child, cookie = tree_ctrl.GetFirstChild(root_item)
-        while curr_child.IsOk():
-            child_name = tree_ctrl.GetItemText(curr_child)
-            if tree_ctrl.IsSelected(curr_child):
-                # It's a top-level page, just return the name
-                return child_name
-            # Otherwise, look at all *its* children
-            curr_subchild, sub_cookie = tree_ctrl.GetFirstChild(curr_child)
-            while curr_subchild.IsOk():
-                subchild_name = tree_ctrl.GetItemText(curr_subchild)
-                if tree_ctrl.IsSelected(curr_subchild):
-                    # Found it as a subchild, separate them with a slash
-                    return f'{child_name}/{subchild_name}'
-                curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
-                    curr_child, sub_cookie)
-            # None of the subchildren of this child are selected, move on to
-            # the next child
-            curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
-        return None
-
-    def wrap_page_descriptions(self, parent_width: int):
-        """Wraps all page descriptions to the specified parent width (in
-        DIP)."""
-        # We've got the parent width now, but that's not what's actually
-        # available to the page panels. Extra space is taken away by the tree
-        # on the left side and the borders (6 * 2 + 6 * 2 + 4 * 2 = 32)
-        tree_ctrl = self._native_widget.GetTreeCtrl()
-        tree_width = tree_ctrl.ToDIP(tree_ctrl.GetSize()).width
-        effective_width = parent_width - tree_width - scaled(32)
-        for child_page in chain(self._all_leaf_pages, self._all_link_pages):
-            child_page.wrap_page_description(effective_width)
+        sel_index = self.get_selected_page_index()
+        return None if sel_index == _wx.NOT_FOUND else self._page_path(
+            sel_index)
