@@ -375,9 +375,9 @@ class DatePicker(_AComponent):
 
     def get_date(self) -> datetime.date:
         """Returns the chosen date as a datetime.date object."""
-        as_datetime = datetime.datetime.strptime(
-            self._native_widget.GetDate().Format('%c'), '%c')
-        return as_datetime.date()
+        wx_date = self._native_widget.GetDate() # its months start at 0
+        return datetime.date(wx_date.GetYear(), wx_date.GetMonth() + 1,
+                             wx_date.GetDay())
 
     def set_date(self, new_date: datetime.date):
         """Sets the currently selected date in this date picker to the

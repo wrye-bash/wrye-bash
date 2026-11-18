@@ -235,7 +235,6 @@ class ListEditor(DialogWindow):
         self._listEditorData: ListEditorData = lid_data
         self._list_items = lid_data.getItemList()
         #--GUI
-        self._size_key = self._listEditorData.__class__.__name__
         super().__init__(parent, title, sizes_dict=_settings)
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items,
@@ -272,13 +271,8 @@ class ListEditor(DialogWindow):
                 (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
                 le_buttons
              ]), LayoutOptions(weight=1, expand=True))])
-        #--Done
-        if self._size_key in _settings['bash.window.sizes']:
-            layout.apply_to(self)
-            self.component_position = _settings['bash.window.sizes'][
-                self._size_key]
-        else:
-            layout.apply_to(self, fit=True)
+        #--Done - fit the contents till we have a saved size to restore
+        layout.apply_to(self, fit=self._size_key not in self._sizes_dict)
 
     #--List Commands
     def DoAdd(self):
@@ -342,12 +336,10 @@ class ListEditor(DialogWindow):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.cancel_modal()
 
 #------------------------------------------------------------------------------

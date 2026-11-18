@@ -98,10 +98,6 @@ class InstallerWizard(WizardDialog):
         self._next_button.enabled = btn_enabled
         self._finish_button.enabled = btn_enabled
 
-    def save_size(self): ##: needed?
-        # Otherwise, regular resize, save the size if we're not maximized
-        self.on_closing(destroy=False)
-
     def _has_next_page(self):
         return not self.parser.parser_finished
 

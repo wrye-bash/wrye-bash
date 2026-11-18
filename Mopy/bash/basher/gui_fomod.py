@@ -129,10 +129,6 @@ class InstallerFomod(WizardDialog):
         self._is_arch = target_installer.is_archive
         self.fm_ret = FomodInstallInfo()
 
-    def save_size(self): ##: needed?
-        # Otherwise, regular resize, save the size if we're not maximized
-        self.on_closing(destroy=False)
-
     def _has_next_page(self):
         return self.fomod_parser.has_next()
 

@@ -53,13 +53,11 @@ class WizardDialog(DialogWindow):
         ])
         self._wiz_layout.apply_to(self)
 
-    def on_closing(self, destroy=True):  ##: this is again True -> not called
-        # via display_dialog context manager
-        if destroy:
-            # We were closed via the dialog 'X' button, mark the wizard as
-            # canceled in this case too
-            self._cancel_wizard()
-        super(WizardDialog, self).on_closing(destroy)
+    def on_closing(self, destroy=False):
+        # We were closed via the dialog 'X' button, mark the wizard as
+        # canceled in this case too
+        self._cancel_wizard()
+        super().on_closing(destroy)
 
     def _refresh_buttons(self, *, moving_back: bool):
         """Enables or disables and hides or unhides buttons based on whether or

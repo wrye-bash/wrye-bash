@@ -178,11 +178,11 @@ class _Installer_ARunFomod(Installer_Op, _Installer_AFomod):
                             balt.Progress)
                     except CancelError:
                         continue
+                with fm_wizard: # destroys it
                     if not fm_wizard.validate_fomod():
                         # Validation failed and the user chose not to continue
                         return
-                    fm_wizard.ensureDisplayed()
-                ret = fm_wizard.run_fomod()
+                    ret = fm_wizard.run_fomod()
                 if ret.canceled:
                     continue
                 # Now we're ready to execute the link's specific action
@@ -341,8 +341,8 @@ class Installer_Wizard(Installer_Op, _NoMarkerLink):
                         self._auto, balt.Progress, bosh.modInfos)
                 except CancelError:
                     return
-                wizard.ensureDisplayed()
-            ret = wizard.Run()
+            with wizard: # destroys it
+                ret = wizard.Run()
             if ret.canceled:
                 if isinstance(ret.canceled, str):
                     self._showWarning(ret.canceled)
