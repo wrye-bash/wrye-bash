@@ -850,13 +850,11 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
         super().__init__(parent, stay_over_parent=True,
             sizes_dict=bass.settings, icon_bundle=balt.Resources.bashBlue)
         ch_layout = VLayout(border=4, spacing=6, item_expand=True)
-        labels_to_wrap = []
         for highlight_data in highlight_items:
             # First add the description for the highlighting, if any
             if highlight_data.highlight_desc:
-                desc_label = WrappingLabel(self, highlight_data.highlight_desc)
-                ch_layout.add(desc_label)
-                labels_to_wrap.append(desc_label)
+                ch_layout.add(WrappingLabel(self,
+                                            highlight_data.highlight_desc))
             node_type = _mk_node_class(highlight_data.parent_tab_key)
             # Then create the actual tree listing the highlightings, which will
             # take up most of the space
@@ -883,9 +881,7 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
             CancelButton(self) if add_cancel_btn else None,
         ]))
         ch_layout.apply_to(self)
-        for wl in labels_to_wrap:
-            wl.auto_wrap()
-        self.update_layout()
+        self.update_layout() # sizes our WrappingLabels, so they wrap
 
     @classmethod
     def make_highlight_entry(cls, highlight_desc: str,

@@ -251,7 +251,7 @@ class _LogWin(_TopLevelWin):
             # called we get white borders instead of grey todo PY3: test if needed
             self.reset_background_color()
             #--Text
-            txtCtrl = TextArea(self, init_text=logText, auto_tooltip=False)
+            txtCtrl = TextArea(self, init_text=logText)
                               # special=True) SUNKEN_BORDER and TE_RICH2
             layout_kw['items'] = [
                 (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
