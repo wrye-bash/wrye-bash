@@ -88,16 +88,15 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
     # noinspection PyMethodOverriding
     def native_init(self, parent, recreate=True, **drag_handlers):
         """Create and return gui button."""
-        created = super().native_init(parent, recreate=recreate,
-                                      **drag_handlers)
-        if created:
+        if freshly_created := super().native_init(parent, recreate=recreate,
+                                                  **drag_handlers):
             self._set_img_and_tip()
             # DnD doesn't work with the EVT_BUTTON so we call sb_click directly
             # self._on_clicked.subscribe(self.sb_click)
             self.on_right_clicked.subscribe(self.DoPopupMenu)
         elif self._is_created(): # we are called from UnhideButton
             self.tooltip = self.sb_button_tip # reset the tooltip just in case
-        return created
+        return freshly_created
 
     @property
     def sb_button_tip(self): return self._tip
