@@ -87,10 +87,16 @@ class CopyOrMovePopup(DialogWindow):
         result = super().show_modal()
         return result and self._ret_action, self._gCheckBox.is_checked
 
+class _PopupTransientWx(_wx.PopupTransientWindow):
+    def OnDismiss(self):
+        """wx just hid us - destroy us, we are only shown once."""
+        self.Destroy() # once idle - wx defers it, we may be in a handler
+
 class _TransientPopup(_AComponent):
     """Base class for transient popups, i.e. popups that disappear as soon as
-    they lose focus."""
-    _native_widget: _wx.PopupTransientWindow
+    they lose focus - they are then destroyed, so their event handlers must
+    not take the focus away, as by showing a dialog."""
+    _native_widget: _PopupTransientWx
 
     def __init__(self, parent):
         # Note: the style (second parameter) may not be passed as a keyword

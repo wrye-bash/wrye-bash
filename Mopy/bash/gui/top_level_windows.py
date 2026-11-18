@@ -223,8 +223,21 @@ class MaybeModalDialogWindow(DialogWindow):
     def show_modeless(self):
         """Open this dialog in a modeless fashion. It will behave similarly to
         a WindowFrame."""
+        # wx just hides a modeless dialog on OK, Cancel or the close button -
+        # which clicks one of those, if present - and no with block destroys us
+        if not any(map(self._native_widget.FindWindow,
+                       (_wx.ID_OK, _wx.ID_CANCEL))):
+            raise SyntaxError('A modeless dialog needs an OK or Cancel button')
+        self._on_dismiss = self._evt_handler(_wx.EVT_BUTTON,
+                                             lambda event: [event.GetId()])
+        self._on_dismiss.subscribe(self._dismiss)
         self._native_widget.Show()
         self._native_widget.Raise()
+
+    def _dismiss(self, button_id):
+        if button_id in (_wx.ID_OK, _wx.ID_CANCEL):
+            self.on_closing(destroy=True)
+            return EventResult.FINISH
 
 class _LogWin(_TopLevelWin):
     """Mixin for common log-like windows options. Must come *right* before a
@@ -309,7 +322,8 @@ def _room(win, vert):
         return max(room1, room2)
     if sizer := win.GetSizer():
         return _sizer_room(sizer, vert)
-    return max((_room(c, vert) for c in win.GetChildren()), default=0)
+    return max((_room(c, vert) for c in win.GetChildren() # not its dialogs
+                if not c.IsTopLevel()), default=0)
 
 def _sizer_room(sizer, vert):
     """The room the items of sizer need - the windows that stretch (lists,
@@ -503,16 +517,16 @@ class CenteredSplash(_AComponent):
             splash_bitmap, splash_style, 1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self._stop_splash)
-        _wx.Yield() ##: huh?
+        _wx.Yield() # paint it, there is no event loop running while we boot
 
     def __enter__(self): return self
 
     def _stop_splash(self):
         """Hides and terminates the splash screen."""
         if self._native_widget is None: return
+        self.visible = False # it's only destroyed once the event loop idles
         self.native_destroy()
-        ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
-        self.visible = False
+        self._native_widget = None # a click closes us, then we exit the with
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._stop_splash()
