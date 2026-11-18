@@ -32,15 +32,25 @@ import wx as _wx
 import wx.svg as _svg
 
 from ._gui_globals import get_image, get_image_dir
-from .base_components import Lazy, scaled
+from .base_components import Lazy, _AComponent, scaled
 from ..bolt import deprint, Path
 from ..exception import ArgumentError, GuiError
 
 ET.register_namespace('', 'http://www.w3.org/2000/svg')
 
 class GuiImage(Lazy):
-    """Wrapper around various native image classes."""
-    # allow to directly access the _native_window (force via _resolve?)
+    """An image, created when first resolved - so it can be declared before
+    the wx.App is. wx has a type per use and each subclass wraps the one its
+    users need:
+    - wx.BitmapBundle, the bitmaps of one picture at several sizes: what the
+      controls take, to pick the one for their DPI (_BitmapBundle).
+    - wx.Bitmap, a native bitmap: what a DC draws and an image list holds
+      (BmpFromStream).
+    - wx.Image, the pixels in memory: it can't be drawn, but it is the one
+      that can be resampled - wx.Bitmap.Rescale goes through it (ImgFromPath).
+    - wx.Icon: what a window takes for its title bar (IcoFromPng).
+    from_path picks the class for an image file."""
+    # nobody calls native_init on an image - resolving it creates it
     _bypass_native_init = True
 
     img_types = {
@@ -72,9 +82,6 @@ class GuiImage(Lazy):
 
     def allow_create(self):
         return os.path.exists(self._img_path.split(';')[0])
-
-    def get_img_size(self):
-        return self._native_widget.GetWidth(), self._native_widget.GetHeight()
 
     @classmethod
     def from_path(cls, img_path: str | Path, imageType=None, iconSize=-1,
@@ -112,6 +119,10 @@ class _BitmapBundle(GuiImage):
             self._cached_args = self._bitmaps(),
         return super()._native_widget
 
+    def _sizes(self): # one and the same at 100% - or -1, the image's own size
+        return sorted({self.iconSize,
+                       max(self.iconSize, scaled(self.iconSize))})
+
     def _bitmaps(self) -> list[_wx.Bitmap]:
         raise NotImplementedError
 
@@ -132,28 +143,19 @@ class _SvgFromPath(_BitmapBundle):
             if var_bytes in svg_data:
                 svg_data = svg_data.replace(var_bytes, var_value)
         svg_img = _svg.SVGimage.CreateFromBytes(svg_data)
-        return [svg_img.ConvertToScaledBitmap((s, s)) for s in
-                (self.iconSize, scaled(self.iconSize))]
+        return [svg_img.ConvertToScaledBitmap((s, s)) for s in self._sizes()]
 
     def composite(self, base_svg, *layer_svgs: str | Path):
         """Create a composite SVG image, by combining elements from the given
         layers, with the first layer being the lowest layer.
         """
         im_dir_join = get_image_dir().join
-        svg_paths = [p if os.path.isabs(p) else im_dir_join(p).s for p in
-                     (base_svg, *layer_svgs)]
-        for (ldex, layer) in enumerate(map(ET.parse, svg_paths)):
-            layer_svg_root = layer.getroot()
-            if layer_svg_root is None:
-                raise ValueError(f'Invalid SVG {layer=!r} loaded from '
-                                 f'{svg_paths[ldex]}')
-            if not ldex:
-                base_layer, base_svg_root = layer, layer_svg_root
-                continue
-            base_svg_root.extend(layer_svg_root.findall('.*'))
-        with io.BytesIO() as out:
-            base_layer.write(out)
-            self._svg_data = out.getvalue()
+        base_svg_root, *layer_svg_roots = (ET.parse(
+            p if os.path.isabs(p) else im_dir_join(p).s).getroot() for p in
+            (base_svg, *layer_svgs))
+        for layer_svg_root in layer_svg_roots:
+            base_svg_root.extend(layer_svg_root)
+        self._svg_data = ET.tostring(base_svg_root)
 
     def with_svg_vars(self, **svg_vars):
         """Create a copy of this image with the specified svg variables."""
@@ -175,11 +177,12 @@ class _SvgFromPath(_BitmapBundle):
             return self._cached_svg_vars
 
 class IcoFromPng(GuiImage):
-    """Create a wx.Icon from a GuiImage instance - no new uses please!"""
+    """The wx.Icon of a GuiImage, for the title bar of a window - no new uses
+    please!"""
     _native_widget: _wx.Icon
 
     def __init__(self, gui_image):
-        super(GuiImage, self).__init__() # bypass GuiImage.__init__
+        super(GuiImage, self).__init__() # not a file - skip GuiImage's init
         self._gui_image = gui_image
 
     @property
@@ -196,13 +199,13 @@ class _BmpFromIcoPath(_BitmapBundle):
     """An .ico, or the icon of an exe or dll ('path;index')."""
 
     def _bitmaps(self):
-        return [_wx.Bitmap(self._icon_image(s)) for s in
-                (self.iconSize, scaled(self.iconSize))]
+        return [_wx.Bitmap(self._icon_image(s)) for s in self._sizes()]
 
     def _icon_image(self, size: int) -> _wx.Image:
         ico = _wx.Icon(self._img_path, self._img_type, size, size)
         if not ico.IsOk(): # wx loads only the system icon sizes from exes
             ico = _wx.Icon(self._img_path, self._img_type)
+        # wx loads it as an icon and scales an image - go through a bitmap
         bmp = _wx.Bitmap()
         bmp.CopyFromIcon(ico)
         img = bmp.ConvertToImage()
@@ -213,7 +216,7 @@ class BmpFromIcoData(_BmpFromIcoPath):
     """An icon from its images, as {width: .ico data} - see pe_icons."""
 
     def __init__(self, ico_images: dict[int, bytes], iconSize: int):
-        super(GuiImage, self).__init__() # bypass GuiImage.__init__
+        super(GuiImage, self).__init__() # not a file - skip GuiImage's init
         self._ico_images = ico_images
         self.iconSize = iconSize
 
@@ -226,8 +229,8 @@ class BmpFromIcoData(_BmpFromIcoPath):
                                                _wx.IMAGE_QUALITY_HIGH)
 
 class ImgFromPath(GuiImage):
-    """Used internally in _BmpFromPath but also used to create a wx.Image
-    directly."""
+    """The wx.Image of an image file - what _BmpFromPath scales its bitmaps
+    from, and what saves the file as another type (save_bmp)."""
     _native_widget: _wx.Image
 
     @property
@@ -239,7 +242,7 @@ class ImgFromPath(GuiImage):
             # Don't use the scaled icon size here - _BmpFromPath performs its
             # own scaling and Screen_ConvertTo wouldn't want to scale anyways
             wanted_size = self.iconSize
-            if self.get_img_size() != (wanted_size, wanted_size):
+            if native.GetSize() != (wanted_size, wanted_size):
                 native.Rescale(wanted_size, wanted_size,
                     _wx.IMAGE_QUALITY_HIGH)
         if self._quality is not None: # This only has an effect on jpgs
@@ -250,25 +253,22 @@ class ImgFromPath(GuiImage):
         return self._native_widget.SaveFile(imagePath, self.img_types[exten])
 
 class _BmpFromPath(_BitmapBundle):
+    """A raster image file - png, jpg, bmp..."""
 
     def _bitmaps(self):
-        # at iconSize, as the smallest bitmap sets the size of the bundle
+        # at iconSize, as the smallest bitmap sets the size of the bundle - a
+        # higher-res image would be better than scaling up, if we had one
         base_img: _wx.Image = self._resolve(ImgFromPath(self._img_path,
             self.iconSize, imageType=self._img_type))
-        scaled_imgs = [base_img]
-        if self.iconSize != -1:
-            # a higher-res image would be better than scaling up, if we had one
-            wanted_size = scaled(self.iconSize)
-            scaled_imgs.append(base_img.Scale(wanted_size, wanted_size,
-                quality=_wx.IMAGE_QUALITY_HIGH))
-        return [*map(_wx.Bitmap, scaled_imgs)]
+        return [_wx.Bitmap(base_img if s == self.iconSize else base_img.Scale(
+            s, s, quality=_wx.IMAGE_QUALITY_HIGH)) for s in self._sizes()]
 
 class BmpFromStream(GuiImage):
-    """Call init directly - hmm."""
+    """A wx.Bitmap from raw pixels - the screenshot stored in a save."""
     _native_widget: _wx.Bitmap
 
     def __init__(self, bm_width, bm_height, stream_data, with_alpha):
-        super(GuiImage, self).__init__() # bypass GuiImage.__init__
+        super(GuiImage, self).__init__() # not a file - skip GuiImage's init
         self._with_alpha = with_alpha
         self._stream_data = stream_data
         self._bm_height = bm_height
@@ -287,18 +287,15 @@ class BmpFromStream(GuiImage):
         return native
 
     def save_bmp(self, imagePath, exten='.jpg'):
-        self._native_widget.ConvertToImage()
         return self._native_widget.SaveFile(imagePath, self.img_types[exten])
 
-class StaticBmp(GuiImage):
-    """This one has a parent and a default value - we should generalize the
-    latter."""
+class StaticBmp(_AComponent):
+    """A component showing an image - the warning icon by default."""
     _native_widget: _wx.StaticBitmap
 
     def __init__(self, parent, gui_image=None):
-        super(GuiImage, self).__init__( # bypass GuiImage.__init__
+        super().__init__(parent,
             bitmap=self._resolve(gui_image or get_image('warning.32')))
-        self._parent = parent
 
 #------------------------------------------------------------------------------
 class ImageList(Lazy):
@@ -323,15 +320,13 @@ class ImageList(Lazy):
     def native_init(self, *args, **kwargs):
         kwargs.setdefault('recreate', False)
         freshly_created = super().native_init(*args, **kwargs)
-        ##: Accessing these like this feels wrong - maybe store the scaled size
-        # somewhere and retrieve it here?
-        scaled_sb_size = self._cached_args[0:2]
         if freshly_created: # ONCE! we don't support adding more images
             self._indices = {}
             for k, im in self._images:
                 nat_img = self._resolve(im)
+                # an image list holds bitmaps, of the size it was created with
                 if isinstance(nat_img, _wx.BitmapBundle):
-                    nat_img = nat_img.GetBitmap(scaled_sb_size)
+                    nat_img = nat_img.GetBitmap(self._native_widget.GetSize())
                 self._indices[k] = self._native_widget.Add(nat_img)
 
     def img_dex(self, *args) -> int | None:

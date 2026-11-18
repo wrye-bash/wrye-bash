@@ -80,7 +80,7 @@ class ViewerMode(Enum):
 
 class WebViewer(_AComponent):
     """Implements an HTML & CSS renderer with JavaScript support. May not be
-    available on all platforms (see gui.webview.web_viewer_available()). Also
+    available on all platforms (see web_viewer_available()). Also
     creates three navigation buttons for going back and forwards in the
     browsing history and reloading the current page.
 
@@ -94,7 +94,7 @@ class WebViewer(_AComponent):
 
         :param parent: The object that this web viewer belongs to. May be a wx
             object or a component.
-        :param icon_list: A tuple of _wx.Bitmaps to use for the image buttons.
+        :param icon_list: A tuple of GuiImages to use for the image buttons.
             Order is back, forward, reload.
         :param buttons_parent: The object that the navigation buttons belong
             to. If None, the same parent will be used."""
@@ -232,15 +232,11 @@ class DocumentViewer(_AComponent):
             self._prev_button, self._next_button, self._reload_button = \
                 self._html_ctrl.get_navigation_buttons()
             items.append(self._html_ctrl)
-            self._text_ctrl.enabled = False
         else:
             # Emulate the buttons WebViewer would normally provide
-            self._prev_button = PureImageButton(parent, button_icons[0],
-                                                btn_tooltip='')
-            self._next_button = PureImageButton(parent, button_icons[1],
-                                                btn_tooltip='')
-            self._reload_button = PureImageButton(parent, button_icons[2],
-                                                  btn_tooltip='')
+            self._prev_button, self._next_button, self._reload_button = (
+                PureImageButton(parent, btn_icon, btn_tooltip='')
+                for btn_icon in button_icons)
         if pdf_viewer_available():
             self._pdf_ctrl = PDFViewer(self)
             items.append(self._pdf_ctrl)
@@ -261,6 +257,7 @@ class DocumentViewer(_AComponent):
             self._pdf_ctrl.visible = new_viewer_mode is ViewerMode.PDF
         self._text_ctrl.enabled = new_viewer_mode is ViewerMode.TEXT
         self._text_ctrl.visible = new_viewer_mode is ViewerMode.TEXT
+        self.update_layout()
 
     @property
     def fallback_text(self):
@@ -300,19 +297,16 @@ class DocumentViewer(_AComponent):
         is available."""
         if not web_viewer_available(): return
         self._update_views(new_viewer_mode=ViewerMode.HTML)
-        self.update_layout()
 
     def switch_to_pdf(self):
         """Disables the other viewers and switches to PDF mode, if PDFViewer is
         available."""
         if not pdf_viewer_available(): return
         self._update_views(new_viewer_mode=ViewerMode.PDF)
-        self.update_layout()
 
     def switch_to_text(self):
         """Disables the other viewers and switches to raw text mode."""
         self._update_views(new_viewer_mode=ViewerMode.TEXT)
-        self.update_layout()
 
     def get_buttons(self):
         """Returns the three navigation buttons as a tuple. Order is prev,

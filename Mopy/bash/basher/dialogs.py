@@ -83,7 +83,7 @@ class ImportFaceDialog(DialogWindow):
         #--Other
         importButton = OkButton(self, btn_label=_('Import'),
                                 on_click=self.DoImport)
-        self.picture = Picture(self, 350, 210, scaling=2) ##: unused
+        self.picture = Picture(self, 350, 210)
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
             ((self.listBox, LayoutOptions(row_span=2, expand=True)),

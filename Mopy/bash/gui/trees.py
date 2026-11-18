@@ -32,8 +32,7 @@ from typing import Self
 
 import wx as _wx
 
-from .base_components import _AComponent, Color
-from .misc_components import Font
+from .base_components import _AComponent, _style_font, Color
 
 @dataclass(slots=True, kw_only=True)
 class TreeNodeFormat:
@@ -80,7 +79,7 @@ class TreeNode:
             tif.back_color.to_rgba_tuple())
         self._native_parent.SetItemTextColour(self._native_node_id,
             tif.text_color.to_rgba_tuple())
-        self._native_parent.SetItemFont(self._native_node_id, Font.Style(
+        self._native_parent.SetItemFont(self._native_node_id, _style_font(
             self._native_parent.GetItemFont(self._native_node_id),
             strong=tif.bold, slant=tif.italics, underline=tif.underline))
 

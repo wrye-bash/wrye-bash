@@ -30,9 +30,7 @@ import wx as _wx
 import wx.adv as _adv
 
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
-    _AComponent
-##: de-wx, then move to base_components
-from .misc_components import Font
+    _AComponent, _style_font
 
 class DropDown(_AComponent):
     """Shows a dropdown with multiple options to pick one from. Often called a
@@ -164,7 +162,7 @@ class ListBox(WithMouseEvents):
     def lb_style_font_at_index(self, lb_selection_dex: int, bold=False,
                                italics=False):
         curr_font = self._native_widget.GetFont()
-        styled_font = Font.Style(curr_font, strong=bold, slant=italics)
+        styled_font = _style_font(curr_font, strong=bold, slant=italics)
         self._native_widget.SetItemFont(lb_selection_dex, styled_font)
 
     # Getters - we should encapsulate index access

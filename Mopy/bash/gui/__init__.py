@@ -36,9 +36,9 @@ from .events import *
 from .functions import *
 from .images import *
 from .layouts import *
-from .misc_components import * # this must come before .list_ctrl
 from .list_ctrl import *
 from .menus import *
+from .misc_components import *
 from .multi_choices import *
 from .popups import *
 from .text_components import *
