@@ -31,10 +31,10 @@ from collections import Counter, defaultdict
 from itertools import chain
 
 from ..base import ImportPatcher
-from ... import bush, parsers
+from ... import bush
 from ...bolt import attrgetter_cache, combine_dicts, deprint, setattr_deep
-from ...brec import RecordType
 from ...exception import ModSigMismatchError
+from ...parsers import FullNames, ItemStats, SpellRecords
 
 #------------------------------------------------------------------------------
 class APreserver(ImportPatcher):
@@ -278,37 +278,6 @@ class ImportActorsFacesPatcher(APreserver):
         return super()._validate_mod(p_file, src_fn, raise_on_errors)
 
 #------------------------------------------------------------------------------
-class ImportActorsFactionsPatcher(APreserver):
-    logMsg = '\n=== ' + _('Refactioned Actors')
-    srcsHeader = '=== ' + _('Source Mods/Files')
-    # Has FormIDs, but will be filtered in AMreActor.keep_fids
-    rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
-    _csv_parser = parsers.ActorFactions
-    patcher_tags = {'Actors.Factions'}
-    _csv_key = 'Factions'
-
-    def _filter_csv_fids(self, parser_instance, loaded_csvs):
-        """Transform the parser structure to the one used by the patcher."""
-        filtered_dict = super()._filter_csv_fids(parser_instance, loaded_csvs)
-        # filter existing factions and convert to the patcher representation
-        earlier_loading = self.patchFile.all_plugins
-        patcher_dict = {}
-        for sig, d in filtered_dict.items():
-            rec_type = RecordType.sig_to_class[sig]
-            patcher_dict_sig = {}
-            for f, facts in d.items():
-                fact_obj = []
-                for fact_fid, rank in facts.items():
-                    if fact_fid.mod_fn not in earlier_loading: continue
-                    ret_obj = parser_instance.get_empty_object(rec_type,
-                                                               fact_fid)
-                    ret_obj.rank = rank
-                    fact_obj.append(ret_obj)
-                if fact_obj: patcher_dict_sig[f] = {'factions': fact_obj}
-            if patcher_dict_sig: patcher_dict[sig] = patcher_dict_sig
-        return patcher_dict
-
-#------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):
     """Merges changes to destructible records."""
     ##: Has FormIDs, filter these in keep_fids?
@@ -342,12 +311,15 @@ class ImportKeywordsPatcher(APreserver):
     patcher_tags = {'Keywords'}
 
 #------------------------------------------------------------------------------
+class _FullNamesParser(FullNames):
+    _attr_dex = {'full': 4}
+
 class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
     logMsg = '\n=== ' + _('Renamed Items')
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = {x: ('full',) for x in bush.game.names_types}
-    _csv_parser = parsers.FullNames
+    _csv_parser = _FullNamesParser
     patcher_tags = {'Names'}
     _csv_key = 'Names'
 
@@ -369,6 +341,9 @@ class ImportSoundsPatcher(APreserver):
     patcher_tags = {'Sound'}
 
 #------------------------------------------------------------------------------
+class _SpellRecordsParser(SpellRecords):
+    _csv_attrs = bush.game.spell_stats_csv_attrs
+
 class ImportSpellStatsPatcher(APreserver):
     """Import spell changes from mod files."""
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
@@ -376,13 +351,18 @@ class ImportSpellStatsPatcher(APreserver):
                  for x in bush.game.spell_stats_types}
     _fid_rec_attrs = {x: bush.game.spell_stats_fid_attrs
                       for x in bush.game.spell_stats_types}
-    _csv_parser = (parsers.SpellRecords
-                   if bush.game.fsName in ('Oblivion', 'OblivionRE')
-                   else None)
+    _csv_parser = _SpellRecordsParser if bush.game.fsName in (
+        'Oblivion', 'OblivionRE') else None
     patcher_tags = {'SpellStats'}
     _csv_key = 'Spells'
 
 #------------------------------------------------------------------------------
+class _ItemStatsParser(ItemStats):
+    sig_stats_attrs = {r: tuple(x for x in a if x != 'eid') for r, a in
+                       ItemStats.sig_stats_attrs.items()}
+    sig_stats_attrs = {r: t for r, t in sig_stats_attrs.items() if t}
+    _skip_eid = True
+
 class ImportStatsPatcher(APreserver):
     """Import stats from mod file."""
     patcher_order = 28 # Run ahead of Bow Reach Fix ##: This seems unneeded
@@ -390,7 +370,7 @@ class ImportStatsPatcher(APreserver):
     srcsHeader = '=== ' + _('Source Mods/Files')
     rec_attrs = bush.game.stats_attrs
     _fid_rec_attrs = bush.game.stats_fid_attrs
-    _csv_parser = parsers.ItemStats
+    _csv_parser = _ItemStatsParser
     patcher_tags = {'Stats'}
     _csv_key = 'Stats'
 
