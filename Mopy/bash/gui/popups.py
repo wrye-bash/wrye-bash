@@ -27,7 +27,6 @@ from __future__ import annotations
 import datetime
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
 
 import wx as _wx
 
@@ -42,7 +41,7 @@ from .misc_components import DatePicker, HorizontalLine, TimePicker
 from .multi_choices import CheckListBox
 from .text_components import Label, SearchBar, TextAlignment, TextField, \
     WrappingLabel
-from .top_level_windows import DialogWindow, _TopLevelWin
+from .top_level_windows import DialogWindow, _AModal
 ##: Remove GPath, it's for file dialogs
 from ..bolt import GPath, dict_sort, Path, FName
 from ..env import TASK_DIALOG_AVAILABLE, BTN_OK, BTN_CANCEL, TaskDialog, \
@@ -134,9 +133,9 @@ class MultiChoicePopup(_TransientPopup):
             btn_tooltip=ra_btn_tooltip, on_click=self._deselect_all_choices)
         # Start with everything shown -> empty search string
         self._search_choices(search_str=u'')
-        help_label = Label(self, help_text, alignment=TextAlignment.CENTER)
         VLayout(border=6, spacing=4, item_expand=True, items=[
-            help_label if help_text else None, choice_search, self._choice_box,
+            Label(self, help_text, alignment=TextAlignment.CENTER)
+            if help_text else None, choice_search, self._choice_box,
             HLayout(spacing=4, item_expand=True, items=[
                 Stretch(), select_all_btn, deselect_all_btn, Stretch(),
             ]),
@@ -185,7 +184,7 @@ class MultiChoicePopup(_TransientPopup):
         raise NotImplementedError
 
 # File Dialogs ----------------------------------------------------------------
-class _FileDialog(_AComponent):
+class _FileDialog(_AModal):
     """Ask user for a filesystem path using the system dialogs."""
     _native_widget: _wx.FileDialog
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
@@ -199,16 +198,10 @@ class _FileDialog(_AComponent):
         super().__init__(parent, title, defaultDir, defaultFile, wildcard,
                          style=style_)
 
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb): self.native_destroy()
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        """Instantiate a dialog, display it and return the ShowModal result."""
-        with cls(*args, **kwargs) as dialog:
-            if dialog._native_widget.ShowModal() != _wx.ID_OK:
-                return False
-            return dialog._validate_input()
+    def show_modal(self):
+        """Return what the user picked, or False if they cancelled."""
+        return (self._native_widget.ShowModal() == _wx.ID_OK and
+                self._validate_input())
 
     def _validate_input(self):
         return GPath(self._native_widget.GetPath())
@@ -219,10 +212,6 @@ class FileOpen(_FileDialog):
 class FileOpenMultiple(_FileDialog):
     """'Open files' dialog that returns a *list* of files to open."""
     _dialog_style = _wx.FD_OPEN | _wx.FD_MULTIPLE | _wx.FD_FILE_MUST_EXIST
-
-    def __init__(self, parent, title='', defaultDir='', defaultFile='',
-                 wildcard=''): ##:mustExist seems True given the FD_FILE_MUST_EXIST?
-        super().__init__(parent, title, defaultDir, defaultFile, wildcard)
 
     def _validate_input(self):
         return [GPath(p) for p in self._native_widget.GetPaths()]
@@ -530,9 +519,7 @@ class AMultiListEditor(DialogWindow):
         for wip_item in curr_clb.lb_get_str_items():
             curr_wip_data[wip_item] = checked_state
 
-    ##: Return type should be tuple[bool, list[str], ...] (I think), but
-    # PyCharm complains about that
-    def show_modal(self) -> tuple[bool, Any]:
+    def show_modal(self) -> tuple[bool, *tuple[list[str], ...]]:
         """Return whether the OK button or Cancel button was pressed and one or
         more lists of strings, where each list of strings corresponds to the
         selected items from the nth list in the editor."""
@@ -567,25 +554,16 @@ def _vista_dialog(parent, message, title, checkBoxTxt=None, vista_buttons=None,
         else:
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
     button, radio, checkbox = dialog.show(commandLinks)
-    for id_, title in vista_buttons:
-        if title.startswith('+'): title = title[1:] # used in ask_uac_restart
-        if title == button:
-            if checkBoxTxt:
-                return id_ in GOOD_EXITS, checkbox
-            else:
-                return id_ in GOOD_EXITS, None
+    for id_, btn_text in vista_buttons:
+        # + is used in ask_uac_restart, the default button is in capitals
+        if btn_text.removeprefix('+').lower() == str(button).lower():
+            return id_ in GOOD_EXITS, checkbox if checkBoxTxt else None
     return False, checkbox
 
-class AskDialog(DialogWindow):
+class AskDialog(_AModal):
     """If in doubt ask the user. If no_cancel is True just display an error/
     warning/info dialog."""
     _native_widget: _wx.MessageDialog
-
-    def __init__(self, parent,  message, title, style=0):
-        # bypass the machinery of DialogWindow (size and position restoring
-        # and saving) and _TopLevelWin (similar stuff - condense somehow?)
-        super(_TopLevelWin, self).__init__(parent, message, title, style=style)
-        self.title = title
 
     @classmethod
     def display_dialog(cls, *args, do_center=False, no_cancel=False,
@@ -605,36 +583,21 @@ class AskDialog(DialogWindow):
                 _wx.ICON_ERROR) | (info_ico and _wx.ICON_INFORMATION)
         if do_center:
             style |= _wx.CENTER
-        if TASK_DIALOG_AVAILABLE:
-            if vista_buttons is None:
-                vista_buttons = []
-                if yes_no:
-                    yes = 'yes'
-                    no = 'no'
-                    if style & _wx.YES_DEFAULT:
-                        yes = 'Yes'
-                    elif style & _wx.NO_DEFAULT:
-                        no = 'No'
-                    vista_buttons.append((BTN_YES, yes))
-                    vista_buttons.append((BTN_NO, no))
-                if style & _wx.OK:
-                    vista_buttons.append((BTN_OK, 'ok'))
-                if style & _wx.CANCEL:
-                    vista_buttons.append((BTN_CANCEL, 'cancel'))
-            icon_ = None
-            if info_ico:
-                icon_ = 'information'
-            if error_ico:
-                icon_ = 'error'
-            if warn_ico or not icon_: # default to warning icon
-                icon_ = 'warning'
-            parent, message, title = args
-            result, _check = _vista_dialog(parent, message, title, icon_=icon_,
-                vista_buttons=vista_buttons, expander=expander)
-        else:
-            kwargs['style'] = style
-            return super().display_dialog(*args, **kwargs)
-        return result
+        if not TASK_DIALOG_AVAILABLE:
+            return super().display_dialog(*args, style=style, **kwargs)
+        if vista_buttons is None:
+            vista_buttons = []
+            if yes_no: # TaskDialog makes the button in capitals the default
+                vista_buttons += [(BTN_YES, 'yes'),
+                                  (BTN_NO, 'no' if default_is_yes else 'NO')]
+            if style & _wx.OK:
+                vista_buttons.append((BTN_OK, 'ok'))
+            if style & _wx.CANCEL:
+                vista_buttons.append((BTN_CANCEL, 'cancel'))
+        parent, message, title = args
+        return _vista_dialog(parent, message, title, expander=expander,
+            vista_buttons=vista_buttons, icon_='information' if info_ico else
+            'error' if error_ico else 'warning')[0] # the default icon
 
 class ContinueDialog(DialogWindow):
     """Dialog having a checkbox that gives the user the option to not show
@@ -677,14 +640,11 @@ class ContinueDialog(DialogWindow):
             return super().display_dialog(*args, **kwargs)
         return result, check
 
-class _EntryDialog(DialogWindow):
+class _EntryDialog(_AModal):
     """Ask the user for a string or a number."""
     _native_widget: _wx.TextEntryDialog # default to text
 
-    def __init__(self, *args, **kwargs):
-        super(_TopLevelWin, self).__init__(*args, **kwargs)
-
-    def show_modal(self) -> str | float | None:
+    def show_modal(self) -> str | int | None:
         if self._native_widget.ShowModal() != _wx.ID_OK:
             return None
         return self._native_widget.GetValue()

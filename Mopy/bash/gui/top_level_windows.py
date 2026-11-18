@@ -61,7 +61,6 @@ class _TopLevelWin(_AComponent):
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle is not None: self.set_icons(icon_bundle)
-        if self._min_size: self.set_min_size(*self._min_size) ##: shouldn't we set this in _set_pos_size??
 
     def _set_pos_size(self, kwargs):
         wanted_pos = kwargs.get('pos', None) or \
@@ -71,13 +70,16 @@ class _TopLevelWin(_AComponent):
             self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
         wanted_width, wanted_height = kwargs.get('size', None) or \
             self._sizes_dict.get(self._size_key, self._def_size)
-        # Check if our wanted width or height is too small and bump it up
-        if self._min_size:
-            if wanted_width < self._min_size[0]:
-                wanted_width = self._min_size[0]
-            if wanted_height < self._min_size[1]:
-                wanted_height = self._min_size[1]
+        if self._min_size: # bump up a wanted width or height that's too small
+            self.set_min_size(*self._min_size)
+            wanted_width = max(wanted_width, self._min_size[0])
+            wanted_height = max(wanted_height, self._min_size[1])
         self.component_size = (wanted_width, wanted_height)
+        # the screen we were on when the position was saved may be gone - not
+        # detected on wxGTK, that finds a display for a window wherever it is
+        if _wx.Display.GetFromWindow(self._native_widget) == _wx.NOT_FOUND:
+            self._native_widget.Move(
+                _wx.Display(0).GetGeometry().GetTopLeft() + (100, 100))
 
     @property
     def is_maximized(self):
@@ -110,18 +112,18 @@ class _TopLevelWin(_AComponent):
         handler will be allowed to veto the destruction of the window."""
         self._native_widget.Close(force_close)
 
+    def _save_pos_size(self):
+        """Save our position and size, for the next window of our kind."""
+        if not self.is_iconized and not self.is_maximized:
+            if self._pos_key:
+                self._sizes_dict[self._pos_key] = self.component_position
+            if self._size_key:
+                self._sizes_dict[self._size_key] = self.component_size
+
     def on_closing(self, destroy=True):
         """Invoked right before this window is destroyed."""
-        if not self.is_iconized and not self.is_maximized:
-            if self._pos_key: self._sizes_dict[self._pos_key] = self.component_position
-            if self._size_key: self._sizes_dict[self._size_key] = self.component_size
+        self._save_pos_size()
         if destroy: self.native_destroy()
-
-    def ensureDisplayed(self, x=100, y=100): ##: revisit uses
-        """Ensure that frame is displayed."""
-        if _wx.Display.GetFromWindow(self._native_widget) == -1:
-            topLeft = _wx.Display(0).GetGeometry().GetTopLeft()
-            self._native_widget.Move(topLeft.x + x, topLeft.y + y)
 
 class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
@@ -154,7 +156,29 @@ class WindowFrame(_TopLevelWin):
 
     def raise_frame(self): self._native_widget.Raise()
 
-class DialogWindow(_TopLevelWin):
+class _AModal(_AComponent):
+    """A window to show modally: through display_dialog, or by calling its
+    show_modal in a with block, which destroys it on exit."""
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.native_destroy()
+
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        """Instantiate a dialog, display it and return the ShowModal result."""
+        with cls(*args, **kwargs) as dialog:
+            return dialog.show_modal()
+
+    def show_modal(self) -> bool:
+        """Begins a new modal dialog and returns a boolean indicating if the
+        exit code was fine. Note that some subclasses override this to return
+        more than just that boolean.
+
+        :return: True if the dialog was closed with a good exit code (e.g. by
+            clicking an 'OK' or 'Yes' button), False otherwise."""
+        return self._native_widget.ShowModal() in (_wx.ID_OK, _wx.ID_YES)
+
+class DialogWindow(_AModal, _TopLevelWin):
     """Wrap a dialog control."""
     title: str
     _native_widget: _wx.Dialog
@@ -173,35 +197,16 @@ class DialogWindow(_TopLevelWin):
         if caption: style |= _wx.CAPTION
         super().__init__(parent, sizes_dict, icon_bundle, title=self.title,
                          style=style, **kwargs)
-        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
-        self._on_size_changed.subscribe(self.save_size) # save dialog size
 
-    def save_size(self):
-        self._sizes_dict[self._size_key] = self.component_size
-
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.native_destroy()
+    def show_modal(self):
+        result = super().show_modal()
+        self._save_pos_size() # on_closing only runs for the close button
+        return result
 
     def on_closing(self, destroy=False): # flip destroy to False
         # dialogs are shown via the context manager above, if we destroy
         # them here they won't be destroyed on __exit__ on mac at least
-        super(DialogWindow, self).on_closing(destroy)
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        """Instantiate a dialog, display it and return the ShowModal result."""
-        with cls(*args, **kwargs) as dialog:
-            return dialog.show_modal()
-
-    def show_modal(self) -> bool:
-        """Begins a new modal dialog and returns a boolean indicating if the
-        exit code was fine. Note that some subclasses override this to return
-        more than just that boolean.
-
-        :return: True if the dialog was closed with a good exit code (e.g. by
-            clicking an 'OK' or 'Yes' button), False otherwise."""
-        return self._native_widget.ShowModal() in (_wx.ID_OK, _wx.ID_YES)
+        super().on_closing(destroy)
 
     def accept_modal(self):
         """Closes the modal dialog with a 'normal' exit code. Equivalent to
