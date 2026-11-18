@@ -39,7 +39,7 @@ from ctypes import POINTER, WINFUNCTYPE, Structure, Union, byref, c_int, \
     c_wchar_p, sizeof, windll, wintypes, wstring_at
 from ctypes.wintypes import MAX_PATH as _MAX_PATH
 from itertools import chain
-from subprocess import Popen, list2cmdline
+from subprocess import CREATE_DEFAULT_ERROR_MODE, Popen, list2cmdline
 from uuid import UUID
 
 try:
@@ -1665,8 +1665,9 @@ class ExeLauncher(AppLauncher):
                          os.getcwd(), 1) # elevated, it won't inherit our cwd
 
     def _run_exe(self, exe_path: _Path, exe_args) -> Popen:
+        # in our error mode a program missing a dll quits without a word
         return Popen(join_launcher_args([exe_path.s, *exe_args]),
-                     close_fds=True)
+                     close_fds=True, creationflags=CREATE_DEFAULT_ERROR_MODE)
 
 @functools.cache
 def in_mo2_vfs() -> bool:
