@@ -548,17 +548,17 @@ class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
         #--Setup Popup menu for Right Click on a Tab
         self._on_ctxt_menu = self._evt_handler(_wx.EVT_CONTEXT_MENU,
             lambda event: [self._native_widget.HitTest(
-                self._native_widget.ScreenToClient(event.GetPosition()))])
+                self._native_widget.ScreenToClient(event.GetPosition()))[0]])
         self._on_ctxt_menu.subscribe(self._do_tab_menu)
 
-    def _do_tab_menu(self, tabId):
-        if tabId != _wx.NOT_FOUND and tabId[0] != _wx.NOT_FOUND:
+    def _do_tab_menu(self, tab_index):
+        if tab_index != _wx.NOT_FOUND:
             self._tab_menu.popup_menu(self, None)
             return EventResult.FINISH
 
-    def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
+    def _on_drag_start(self, mouse_evnt, lb_dex_and_flags):
         if not self._native_widget.HasCapture(): # or blow up on CaptureMouse()
-            self.__dragging = _lb_dex_and_flags
+            self.__dragging = lb_dex_and_flags[0] # NOT_FOUND if on no tab
             if self.__dragging != _wx.NOT_FOUND:
                 self.__dragX = mouse_evnt.evt_pos[0]
                 self.__justSwapped = _wx.NOT_FOUND
@@ -567,6 +567,7 @@ class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
     def _on_drag_end_forced(self):
         self.__dragging = _wx.NOT_FOUND
         self.set_cursor()
+        return EventResult.FINISH # wx asserts if this event is skipped
 
     def _on_drag_end(self, mouse_evnt):
         if self.__dragging != _wx.NOT_FOUND:
@@ -586,21 +587,19 @@ class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
             pos = mouse_evnt.evt_pos
             if abs(pos[0] - self.__dragX) > 5:
                 self.set_cursor(hand=True)
-            tabId = self._native_widget.HitTest(pos)
-            if tabId == _wx.NOT_FOUND or tabId[0] in (_wx.NOT_FOUND,self.__dragging[0]):
+            newPos = self._native_widget.HitTest(pos)[0]
+            if newPos in (_wx.NOT_FOUND, self.__dragging):
                 self.__justSwapped = _wx.NOT_FOUND
             else:
-                if self.__justSwapped == tabId[0]:
+                if self.__justSwapped == newPos:
                     return
                 # We'll do the swapping by removing all pages in the way,
                 # then readding them in the right place.  Do this because
                 # it makes the tab we're dragging not have to refresh, whereas
                 # if we just removed the current page and reinserted it in the
                 # correct position, there would be refresh artifacts
-                newPos = tabId[0]
-                oldPos = self.__dragging[0]
-                self.__justSwapped = oldPos
-                self.__dragging = tabId[:]
+                oldPos = self.__justSwapped = self.__dragging
+                self.__dragging = newPos
                 if newPos < oldPos:
                     left,right,step = newPos,oldPos,1
                 else:
