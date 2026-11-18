@@ -43,8 +43,8 @@ There are four main differences between this system and wx's:
      swallow the event (which is rarely wanted and can easily lead to bugs).
      Nearly all of WB's need for wx event objects was just to call
      event.Skip().
-  4. Multiple listeners can subscribe to one event. wx allows just one binding,
-     and attempting to bind a new callback will remove the old binding.
+  4. Multiple listeners can subscribe to one event and all get it, in order.
+     wx only calls the last handler bound, unless that calls event.Skip().
 
 Subscribing:
   To subscribe to an event, simply call subscribe() on the EventHandler
@@ -177,7 +177,7 @@ class EventHandler(object):
 
         :param event: The event that occurred."""
         listener_args = self._arg_processor(event)
-        for listener in self._listeners:
+        for listener in [*self._listeners]: # they may (un)subscribe meanwhile
             result = listener(*listener_args)
             # result will be None if method didn't return anything
             if result is None or result is EventResult.CONTINUE:
@@ -246,7 +246,8 @@ class EventHandler(object):
             self._wx_owner.Bind(self._wx_event_id, self._post)
             self._is_bound = True
         elif not self._listeners and self._is_bound:
-            self._wx_owner.Unbind(self._wx_event_id)
+            # pass our handler, else wx drops the last one bound to the event
+            self._wx_owner.Unbind(self._wx_event_id, handler=self._post)
             self._is_bound = False
 
     def __repr__(self):
