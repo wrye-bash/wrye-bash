@@ -130,25 +130,21 @@ class TreeNode:
     def delete_child(self, child_index: int):
         """Delete the child node of this node with the specified index, as well
         as all of its subnodes."""
-        # Same reasoning as above
-        # noinspection PyProtectedMember
-        notify_del = self._parent_tree._notify_child_deleted
-        to_del_node = self._child_nodes[child_index]
-        for subnode in to_del_node.iter_subnodes():
-            notify_del(subnode._native_node_id)
+        to_del_node = self._child_nodes.pop(child_index)
+        for del_node in (to_del_node, *to_del_node.iter_subnodes()):
+            # Same reasoning as above
+            # noinspection PyProtectedMember
+            self._parent_tree._notify_child_deleted(del_node._native_node_id)
         # This will delete all its children as well
         self._native_parent.Delete(to_del_node._native_node_id)
-        del self._child_nodes[child_index]
 
     def delete_children(self):
         """Delete all child nodes of this node, as well as all of their
         subnodes."""
-        # Same reasoning as above
-        # noinspection PyProtectedMember
-        notify_del = self._parent_tree._notify_child_deleted
-        for to_del_node in self._child_nodes:
-            for subnode in to_del_node.iter_subnodes():
-                notify_del(subnode._native_node_id)
+        for subnode in self.iter_subnodes():
+            # Same reasoning as above
+            # noinspection PyProtectedMember
+            self._parent_tree._notify_child_deleted(subnode._native_node_id)
         self._native_parent.DeleteChildren(self._native_node_id)
         self._child_nodes.clear()
 
@@ -222,6 +218,7 @@ class AVirtualTreeNode(TreeNode):
             has_children)
 
     def on_expanding(self):
+        if self._child_nodes: return # created the first time we expanded
         with self._parent_tree.pause_drawing():
             for child_text in self.get_child_texts():
                 self.append_child(child_text)
