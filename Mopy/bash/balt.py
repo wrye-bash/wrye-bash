@@ -1293,7 +1293,7 @@ class UIList(PanelWin):
         if categories_changed:
             # Release and recreate the global menu to avoid GUI flicker
             glb_menu.release_bindings()
-            glb_menu = GlobalMenu()
+            glb_menu = GlobalMenu(Link.Frame)
             glb_menu.set_categories(tab_categories)
             Link.Frame.set_global_menu(glb_menu)
         for curr_cat in tab_categories:

@@ -520,20 +520,19 @@ class GlobalMenu(_AEvtHandler):
             super().__init__()
             self.category_label = cat_lbl
 
-    def __init__(self):
+    def __init__(self, frame):
+        """:param frame: The frame to be the menu bar of - wx sends it the
+            events of our menus and of the context menus popped in it. Its
+            set_status_info shows the help of the menu items."""
         super().__init__() # no parent
+        self._frame = frame
         self._category_handlers = {}
-        # We need to do this once and only once, because wxPython does not
-        # support binding multiple methods to one event source. Also, it *has*
-        # to be on Link.Frame, even if that looks weird.
-        ##: de-wx! move links to gui
-        from ..balt import Link
         menu_processor = lambda event: [event.GetMenu()]
-        self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
+        self._on_menu_opened = frame._evt_handler(_wx.EVT_MENU_OPEN,
             menu_processor)
-        self._on_menu_closed = Link.Frame._evt_handler(_wx.EVT_MENU_CLOSE,
+        self._on_menu_closed = frame._evt_handler(_wx.EVT_MENU_CLOSE,
             menu_processor)
-        self._on_menu_highlight = Link.Frame._evt_handler(
+        self._on_menu_highlight = frame._evt_handler(
             _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()])
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
@@ -552,11 +551,16 @@ class GlobalMenu(_AEvtHandler):
         self._category_handlers[cat_label] = cat_handler
 
     def release_bindings(self):
-        """Releases the 'on menu' bindings used by this class. You *must* call
-        this if you want to replace the global menu at runtime."""
+        """Releases the 'on menu' bindings used by this class and destroys its
+        menu bar. You *must* call this if you want to replace the global menu
+        at runtime."""
         self._on_menu_opened.unsubscribe(self._handle_menu_opened)
         self._on_menu_closed.unsubscribe(self._handle_menu_closed)
         self._on_menu_highlight.unsubscribe(self._handle_menu_highlight)
+        # the frame only detaches the menu bar it replaces - later, as one of
+        # our links may be what is replacing us
+        native = self._native_widget
+        _wx.CallAfter(lambda: native.IsAttached() or native.Destroy())
 
     def set_categories(self, all_categories: list[str]):
         """Creates dropdowns for all specified categories, discarding existing
@@ -572,12 +576,9 @@ class GlobalMenu(_AEvtHandler):
         self._populate_menu(self._categories[menu_category], populate_cb)
 
     def _handle_menu_opened(self, wx_menu):
-        """Internal callback, does the heavy lifting. Also handles status bar
-        text resetting, because wxPython does not permit more than one event
-        handler."""
-        ##: de-wx! move links to gui
-        from ..balt import Link
-        Link.Frame.set_status_info(u'')
+        """Internal callback, does the heavy lifting. Also resets the status
+        bar text, for the context menus too."""
+        self._frame.set_status_info('')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
         # Need to set this, otherwise help text won't be shown
@@ -608,11 +609,9 @@ class GlobalMenu(_AEvtHandler):
 
     def _handle_menu_highlight(self, item_id):
         """Internal callback, shows the help of the item hovered in a menu."""
-        ##: de-wx! move links to gui
-        from ..balt import Link
         if Links.Popup:
             item = Links.Popup.FindItemById(item_id)
-            Link.Frame.set_status_info(item.GetHelp() if item else '')
+            self._frame.set_status_info(item.GetHelp() if item else '')
         return EventResult.FINISH # wx would show it in the first field too
 
 class Dragger(_AComponent):

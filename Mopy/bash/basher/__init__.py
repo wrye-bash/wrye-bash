@@ -3450,7 +3450,7 @@ class BashFrame(WindowFrame):
         status_bar = self.statusBar = BashStatusBar(self)
         self._native_widget.SetStatusBar(self._resolve(status_bar))
         self.global_menu = None
-        self.set_global_menu(GlobalMenu())
+        self.set_global_menu(GlobalMenu(self))
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = u''
