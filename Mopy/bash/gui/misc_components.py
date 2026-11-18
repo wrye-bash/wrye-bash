@@ -63,8 +63,9 @@ class Picture(_AComponent):
 
     def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
                  style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
-        super(Picture, self).__init__(parent, size=(width, height),
-                                      style=style)
+        super().__init__(parent, style=style)
+        # wx makes a size passed on creation the minimum size of the window
+        self._native_widget.SetSize((width, height))
         self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
         self._gui_bitmap = None
         self.background = self._get_brush(
