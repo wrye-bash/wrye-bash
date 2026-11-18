@@ -1359,8 +1359,7 @@ class ModDetails(_ModsSavesDetails):
         #--Description
         self._max_desc_len = bush.game.Esp.max_desc_length
         # Same note about max_length applies here too
-        self._desc_area = TextArea(top, max_length=self._max_desc_len,
-            auto_tooltip=False)
+        self._desc_area = TextArea(top, max_length=self._max_desc_len)
         self._desc_area.on_text_changed.subscribe(self._on_desc_typed)
         self._desc_area.on_focus_lost.subscribe(self._on_desc_finished)
         self._desc_label = Label(top, '')
@@ -2541,7 +2540,8 @@ class InstallersDetails(_SashDetailsPanel):
         top, bottom = self.left, self.right
         commentsPanel = PanelWin(bottom)
         #--Package
-        self.gPackage = TextArea(top, editable=False, no_border=True)
+        self.gPackage = TextArea(top, editable=False, no_border=True,
+                                 auto_tooltip=True) # the name, if too long
         #--Info Tabs
         self.gNotebook, self.checkListSplitter = self.subSplitter.make_panes(
             first_pane=TabbedPanel(self.subSplitter, multiline=True),
@@ -2558,8 +2558,7 @@ class InstallersDetails(_SashDetailsPanel):
             (u'gSkipped', _(u'Skipped')),
             )
         for cmp_name, page_title in infoTitles:
-            gPage = TextArea(self.gNotebook, editable=False,
-                             auto_tooltip=False, do_wrap=False)
+            gPage = TextArea(self.gNotebook, editable=False, do_wrap=False)
             gPage.set_component_name(cmp_name)
             self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
@@ -2591,7 +2590,7 @@ class InstallersDetails(_SashDetailsPanel):
             self._on_plugin_filter_dclick)
         self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
         #--Comments
-        self.gComments = TextArea(commentsPanel, auto_tooltip=False)
+        self.gComments = TextArea(commentsPanel)
         #--Layout
         VLayout(items=[
             self.fomod_btn, self.sp_btn, self.sp_label,

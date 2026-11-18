@@ -84,8 +84,7 @@ class StartupDialogWindow(DialogWindow):
             icon_bundle=Resources.bashRed,
             style=wx.STAY_ON_TOP | wx.DIALOG_NO_PARENT)
         self.component_size = (400, 300)
-        msg_text = TextArea(self, editable=False, init_text=msg,
-                            auto_tooltip=False)
+        msg_text = TextArea(self, editable=False, init_text=msg)
         btns = [OkButton(self, btn_label=_('Continue')), CancelButton(self,
             btn_label=_('Abort'))] if is_warning else [CancelButton(self,
             btn_label=_('Quit'))]

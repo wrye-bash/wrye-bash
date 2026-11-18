@@ -224,7 +224,7 @@ class DocumentViewer(_AComponent):
             Order is back, forward, reload."""
         super().__init__(parent)
         # init the fallback/plaintext widget
-        self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
+        self._text_ctrl = TextArea(self, editable=False)
         items = [self._text_ctrl]
         if web_viewer_available():
             # We can render HTML, create the WebViewer and use its buttons

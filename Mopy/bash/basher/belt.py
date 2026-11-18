@@ -155,8 +155,7 @@ class PageError(PageInstaller):
         # Layout stuff
         VLayout(spacing=5, items=[
             Label(self, title),
-            (TextArea(self, editable=False, init_text=errorMsg,
-                      auto_tooltip=False),
+            (TextArea(self, editable=False, init_text=errorMsg),
              LayoutOptions(weight=1, expand=True))
         ]).apply_to(self)
         self.update_layout()
@@ -175,7 +174,7 @@ class PageSelect(PageInstaller):
         self.bMany = bMany
         self.index = None
         self.title_desc = Label(self, desc)
-        self.textItem = TextArea(self, editable=False, auto_tooltip=False)
+        self.textItem = TextArea(self, editable=False)
         self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
         kwargs = dict(choices=self.listItems, isHScroll=True,
                       onSelect=self.OnSelect)
@@ -379,8 +378,8 @@ class PageFinish(PageInstaller):
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
             Label(self, _('Notes:')),
-            (TextArea(self, init_text=''.join(wrye_parser.notes),
-                      auto_tooltip=False), LayoutOptions(weight=1)),
+            (TextArea(self, init_text=''.join(wrye_parser.notes)),
+             LayoutOptions(weight=1)),
             HLayout(items=[
                 Stretch(),
                 VLayout(spacing=2, items=[self.checkApply, self.checkInstall])
