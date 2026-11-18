@@ -170,7 +170,6 @@ class DeselectAllButton(Button):
     multi-element selection component.
 
     See Button for documentation on button events."""
-    _id = _wx.ID_SELECTALL
     _default_label = _(u'Deselect All')
 
 class ApplyButton(Button):

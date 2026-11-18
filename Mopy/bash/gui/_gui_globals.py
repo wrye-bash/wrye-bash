@@ -82,32 +82,24 @@ def init_image_resources(images_dir: _Path):
     _gui_images.update(_installer_icons)
     # collect color checks for the rest of the UILists
     _color_checks = dict(arrows)
-    for st, col in product(['imp', 'inc', 'off', 'on'],
-                           box_colors.keys() - {'white', 'grey'}):
-        inst_key = 'on' if st == 'inc' else ('inc' if st == 'on' else st)
-        if not (colored_check := _installer_icons.get(f'{inst_key}.{col}')):
-            layers = ['checkbox_box.svg']
-            if st == 'imp':
-                layers.append('checkbox_dot.svg')
-            elif st == 'inc':
-                layers.append('checkbox_plus.svg')
-            elif st == 'on':
-                layers.append('checkbox_check.svg')
-            svg = _icc(layers[0])
-            svg.composite(*layers)
-            primary, secondary = box_colors[col]
-            colored_check = svg.with_svg_vars(primary_color=primary,
-                                              secondary_color=secondary)
-        _color_checks[f'{st}.{col}'] = colored_check
+    for col in box_colors.keys() - {'white', 'grey'}:
+        # off and inc(luded) are the off and on boxes of the installers
+        _color_checks[f'off.{col}'] = _installer_icons[f'off.{col}']
+        _color_checks[f'inc.{col}'] = _installer_icons[f'on.{col}']
+        primary, secondary = box_colors[col]
+        for st, layer in (('imp', 'checkbox_dot.svg'),
+                          ('on', 'checkbox_check.svg')):
+            svg = _icc('checkbox_box.svg')
+            svg.composite('checkbox_box.svg', layer)
+            _color_checks[f'{st}.{col}'] = svg.with_svg_vars(
+                primary_color=primary, secondary_color=secondary)
     _gui_images.update(_color_checks)
-    # PNGs --------------------------------------------------------------------
     # Checkboxes
     pixs = (16, 24, 32)
     for st, col, pix in product(['off', 'on'], ('blue', 'green', 'red'), pixs):
         svg = copy(_color_checks[f'{st}.{col}'])
         svg.set_icon_size(pix)
         _gui_images[f'checkbox.{col}.{st}.{pix}'] = svg
-    # SVGs --------------------------------------------------------------------
     # Modification time button
     _gui_images['calendar.16'] = _icc('calendar.svg')
     # DocumentViewer
@@ -116,9 +108,12 @@ def init_image_resources(images_dir: _Path):
     # Browse and Reset buttons
     _gui_images['folder.16'] = _icc('folder.svg')
     _gui_images['reset.16'] = _icc('reset.svg')
-    # DocumentViewer, Restart and help
-    for fname, pix in product(('reload', 'help'), pixs):
-        _gui_images[f'{fname}.{pix}'] = _icc(f'{fname}.svg', pix)
+    # DocumentViewer and Restart, help, Settings button, Plugin Checker and
+    # Doc Browser
+    for (img_key, fname), pix in product((('reload', 'reload'),
+            ('help', 'help'), ('settings_button', 'gear'),
+            ('plugin_checker', 'checklist'), ('doc_browser', 'book')), pixs):
+        _gui_images[f'{img_key}.{pix}'] = _icc(f'{fname}.svg', pix)
     # Checkmark/Cross - the cross in the status bar icon sizes too
     _gui_images['checkmark.16'] = _icc('checkmark.svg')
     ERROR_ICONS[:] = [_icc('error_cross.svg', pix) for pix in pixs]
@@ -128,18 +123,6 @@ def init_image_resources(images_dir: _Path):
     _gui_images['plus.16'] = _icc('plus.svg')
     # Warning icon in various GUIs
     _gui_images['warning.32'] = _icc('warning.svg', 32)
-    # Settings button
-    _gui_images['settings_button.16'] = _icc('gear.svg')
-    _gui_images['settings_button.24'] = _icc('gear.svg', 24)
-    _gui_images['settings_button.32'] = _icc('gear.svg', 32)
-    # Plugin Checker
-    _gui_images['plugin_checker.16'] = _icc('checklist.svg')
-    _gui_images['plugin_checker.24'] = _icc('checklist.svg', 24)
-    _gui_images['plugin_checker.32'] = _icc('checklist.svg', 32)
-    # Doc Browser
-    _gui_images['doc_browser.16'] = _icc('book.svg')
-    _gui_images['doc_browser.24'] = _icc('book.svg', 24)
-    _gui_images['doc_browser.32'] = _icc('book.svg', 32)
     # Check/Uncheck All buttons
     _gui_images['square_empty.16'] = _icc('square_empty.svg')
     _gui_images['square_check.16'] = _icc('square_checked.svg')

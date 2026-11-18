@@ -32,9 +32,9 @@ from dataclasses import dataclass
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
-    _AComponent, _auto_size_to_wx, scaled
+    _AComponent, _auto_size_to_wx, _style_font, scaled
+from .events import EventHandler
 from .. import bolt, env
 
 class ListCtrl(_wx.ListCtrl):
@@ -424,8 +424,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
             g_item.SetImage(icon_index)
         g_item.SetTextColour(df.text_key.to_rgba_tuple())
         g_item.SetBackgroundColour(df.back_key.to_rgba_tuple())
-        g_item.SetFont(Font.Style(g_item.GetFont(), strong=df.bold,
-                                  slant=df.italics, underline=df.underline))
+        g_item.SetFont(_style_font(g_item.GetFont(), strong=df.bold,
+                                   slant=df.italics, underline=df.underline))
         if insert: # associate our internal id with this item/row
             i = self.__id(item)
             g_item.SetData(i)
@@ -530,9 +530,9 @@ class ImageListBox(_AComponent):
                 self._resolve(item_image).GetBitmap((img_size, img_size))))
             if greyed:
                 native.SetItemTextColour(item_dex, grey)
-            if italics: # Style modifies the font GetFont returned, a copy
+            if italics: # _style_font modifies the font GetFont returns, a copy
                 native.SetItemFont(item_dex,
-                                   Font.Style(native.GetFont(), slant=True))
+                                   _style_font(native.GetFont(), slant=True))
             self._item_keys.append(item_key)
 
     def select_key(self, item_key) -> bool:

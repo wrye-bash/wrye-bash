@@ -27,7 +27,6 @@ from __future__ import annotations
 __author__ = 'nycz, Infernio, Utumno'
 
 import functools
-import platform
 import textwrap
 from typing import Self, get_type_hints
 
@@ -40,14 +39,10 @@ from ..exception import GuiError
 # Utilities -------------------------------------------------------------------
 @functools.cache
 def _csf() -> float:
-    """Returns the content scale factor (CSF) needed for high DPI displays."""
-    if platform.system() != 'Darwin': ##: Linux? os_name == 'nt' if so
-        ##: This should really be GetContentScaleFactor(), but that always
-        # returns 1.0 for me (on wxPython 4.2.0), so use a workaround
-        scaled_size = _wx.Window().FromDIP((16, 16))
-        return scaled_size[0] / 16
-    else:
-        return 1.0 # Everything scales automatically on macOS
+    """Returns the content scale factor (CSF) needed for high DPI displays -
+    1 on wxGTK and wxOSX, whose pixels are DPI independent ones already. Not
+    GetContentScaleFactor, that's the reverse: always 1 on wxMSW."""
+    return _wx.Window().FromDIP((16, 16))[0] / 16
 
 def scaled(unscaled_size: int | float):
     scaled = unscaled_size * _csf()
@@ -59,6 +54,13 @@ def wrapped_tooltip(tooltip_text: str, wrap_width: int = 50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)
     return _wx.ToolTip(tooltip_text)
+
+def _style_font(font_: _wx.Font, strong=False, slant=False, underline=False):
+    """Set the weight, style and underlining of font_ and return it."""
+    font_.SetWeight(_wx.FONTWEIGHT_BOLD if strong else _wx.FONTWEIGHT_NORMAL)
+    font_.SetStyle(_wx.FONTSTYLE_SLANT if slant else _wx.FONTSTYLE_NORMAL)
+    font_.SetUnderlined(underline)
+    return font_
 
 class Color:
     """A simple RGB(A) color class used to avoid having to return wx.Colour

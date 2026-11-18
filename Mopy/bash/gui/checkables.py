@@ -76,6 +76,13 @@ class _ACheckable(_AComponent):
         function will be given a single parameter, the instance of _ACheckable
         that was interacted with."""
         self._block_user_func = block_user_func
+        self.on_checked.subscribe(self._do_block_user)
+
+    def _do_block_user(self, checked: bool):
+        """Internal event handler to implement the block_user parameter."""
+        # Undo the change, then call the function if it was set.
+        self.is_checked = not checked
+        self._block_user_func(self)
 
     def is_blocked(self):
         """Returns True if user interaction for this component is blocked."""
@@ -100,20 +107,10 @@ class CheckBox(_ACheckable):
         super().__init__(parent, label=self._escape(cb_label), checked=checked)
         if chkbx_tooltip:
             self.tooltip = chkbx_tooltip
-        self._on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
-                                             lambda event: [event.IsChecked()])
+        self.on_checked = self._evt_handler(_wx.EVT_CHECKBOX,
+                                            lambda event: [event.IsChecked()])
         if on_check:
-            self._on_checked.subscribe(on_check)
-
-    def block_user(self, block_user_func):
-        super(CheckBox, self).block_user(block_user_func)
-        self._on_checked.subscribe(self._do_block_user)
-
-    def _do_block_user(self, checked: bool):
-        """Internal event handler to implement the block_user parameter."""
-        # Undo the change, then call the function if it was set.
-        self.is_checked = not checked
-        self._block_user_func(self)
+            self.on_checked.subscribe(on_check)
 
 class RadioButton(_ACheckable):
     """A radio button. Once checked, can only be unchecked by checking another
@@ -128,11 +125,3 @@ class RadioButton(_ACheckable):
                          style=is_group and _wx.RB_GROUP)
         self.on_checked = self._evt_handler(_wx.EVT_RADIOBUTTON,
                                             lambda event: [event.IsChecked()])
-
-    def block_user(self, block_user_func):
-        super(RadioButton, self).block_user(block_user_func)
-        self.on_checked.subscribe(self._do_block_user)
-
-    def _do_block_user(self, checked: bool):
-        self.is_checked = not checked
-        self._block_user_func(self)

@@ -47,22 +47,12 @@ from .menus import Links
 from .text_components import TextField
 from ..bolt import Path, dict_sort
 
-class Font(_wx.Font):
-    @staticmethod
-    def Style(font_: _wx.Font, strong=False, slant=False, underline=False):
-        if strong: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
-        else: font_.SetWeight(_wx.FONTWEIGHT_NORMAL)
-        if slant: font_.SetStyle(_wx.FONTSTYLE_SLANT)
-        else: font_.SetStyle(_wx.FONTSTYLE_NORMAL)
-        font_.SetUnderlined(underline)
-        return font_
-
 # Pictures --------------------------------------------------------------------
 class Picture(_AComponent):
     """Picture panel."""
 
-    def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
-                 style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
+    def __init__(self, parent, width, height, style=_wx.BORDER_SUNKEN,
+                 background=_wx.MEDIUM_GREY_BRUSH):
         super().__init__(parent, style=style)
         # wx makes a size passed on creation the minimum size of the window
         self._native_widget.SetSize((width, height))
@@ -70,7 +60,6 @@ class Picture(_AComponent):
         self._gui_bitmap = None
         self.background = self._get_brush(
             background or self._native_widget.GetBackgroundColour())
-        #self.SetSizeHints(width,height,width,height)
         #--Events
         self._on_paint = self._evt_handler(_wx.EVT_PAINT)
         self._on_paint.subscribe(self._handle_paint)
@@ -108,24 +97,27 @@ class Picture(_AComponent):
         self._handle_resize()
         return self._gui_bitmap
 
-    def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
-        x, y = self.scaled_size()
-        if x <= 0 or y <= 0: return
+    def _handle_resize(self):
+        """Redraw the buffer we paint, which keeps resizing free of flicker:
+        our bitmap scaled to fit, on our background. Scaling goes through a
+        wx.Image, the one that can be resampled - as in wx.Bitmap.Rescale,
+        that picks the nearest pixel though."""
+        # the buffer is painted on our client area, inside our border
+        x, y = (max(1, s) for s in self._native_widget.GetClientSize())
         self.buffer = _wx.Bitmap(x,y)
-        dc = _wx.MemoryDC()
-        dc.SelectObject(self.buffer)
+        dc = _wx.MemoryDC(self.buffer)
         # Draw
         dc.SetBackground(self.background)
         dc.Clear()
         if self._gui_bitmap is not None:
             old_x,old_y = self._gui_bitmap.GetSize()
-            scale = min(float(x)/old_x, float(y)/old_y)
-            new_x = old_x * scale
-            new_y = old_y * scale
+            scale = min(x / old_x, y / old_y)
+            new_x = max(1, int(old_x * scale)) # wx asserts on rescaling to 0
+            new_y = max(1, int(old_y * scale))
             pos_x = max(0,x-new_x)/2
             pos_y = max(0,y-new_y)/2
             image = self._gui_bitmap.ConvertToImage()
-            image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
+            image.Rescale(new_x, new_y, _wx.IMAGE_QUALITY_HIGH)
             dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc
         self._native_widget.Refresh()
@@ -188,7 +180,7 @@ class Table(WithCharEvents):
                in table_data.values()):
             raise SyntaxError(u'Table columns must all have the same size')
         if not all(table_data):
-            raise SyntaxError(u'Table rows must be nonempty strings')
+            raise SyntaxError('Table column labels must be nonempty strings')
         # Create the Grid, then populate it from table_data
         # Note order here and below - row, col is correct for wx
         self._native_widget.CreateGrid(column_len, len(table_data))
@@ -212,8 +204,7 @@ class Table(WithCharEvents):
                     self._native_widget.ClearSelection()
                 else:
                     # Ctrl+A - select all cells
-                    for c in range(self._native_widget.GetNumberCols()):
-                        self._native_widget.SelectCol(c, True)
+                    self._native_widget.SelectAll()
             elif kcode == ord(u'C'):
                 # Ctrl+C - copy contents of selected cells
                 copy_text_to_clipboard(self._format_selected_cells(
@@ -241,28 +232,26 @@ class Table(WithCharEvents):
             # Selection is limited to a single column, format as a
             # newline-separated list
             sorted_cells = dict_sort(next(iter(sel_cells.values())),
-                                     key_f=lambda k: int(k))
+                                     key_f=int)
             return u'\n'.join(t[1] for t in sorted_cells)
         else:
             # Here is where it gets ugly - we need to format a full table with
             # row/column separators, proper spacing and labels
             clip_text = []
-            row_labels = set(chain.from_iterable(
-                r for r in sel_cells.values()))
-            col_labels = list(sel_cells) ##: do we need the list here?
-            # First calculate the maximum label lengths we'll have to pad to
+            row_labels = set(chain.from_iterable(sel_cells.values()))
+            # First calculate the maximum lengths we'll have to pad to - of
+            # the cells and of the label of each column
             max_row_length = max(map(len, row_labels))
-            max_col_lengths = {}
-            for col_label, col_cells in sel_cells.items():
-                max_col_lengths[col_label] = max(
-                    map(len, col_cells.values()))
+            max_col_lengths = {
+                col_label: max(len(col_label), *map(len, col_cells.values()))
+                for col_label, col_cells in sel_cells.items()}
             # We now have enough info to format the header, so do that
             first_header_line = u' ' * max_row_length + u' | '
             first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
-                                             for l in col_labels)
+                                             for l in sel_cells)
             second_header_line = u'-' * (max_row_length + 1) + u'+'
             second_header_line += u'+'.join(u'-' * (max_col_lengths[l] + 2)
-                                            for l in col_labels)
+                                            for l in sel_cells)
             # Bit hacky - the last one doesn't have a trailing space
             second_header_line = second_header_line[:-1]
             clip_text.append(first_header_line)
@@ -302,7 +291,6 @@ class Table(WithCharEvents):
                 # there's a value in the cell before storing it (we don't want
                 # to override cells the user didn't originally select)
                 for i, cell_value in enumerate(line_contents[1:]):
-                    cell_value = cell_value
                     if cell_value:
                         ret_dict[col_labels[i]][row_label] = cell_value
         else:
