@@ -26,7 +26,7 @@ from __future__ import annotations
 
 __author__ = u'Lojack, Utumno'
 
-import pickle
+import os
 from dataclasses import dataclass
 
 import wx as _wx
@@ -77,11 +77,11 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
                     # File(s) were dropped
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
                     return _wx.DragCopy
-                elif dtype == self.dataList.GetFormat().GetType():
-                    # ListCtrl indexes
-                    _data = pickle.loads(self.dataList.GetData().tobytes(),
-                                         encoding='bytes')
-                    self.window._OnDropList(x, y, _data)
+                elif (dtype == self.dataList.GetFormat().GetType() and
+                      self.dataList.GetData().tobytes().startswith(
+                          self.window.drag_id)): # Windows may pad the data
+                    # ListCtrl indexes, dragged from our list
+                    self.window._OnDropList(x, y, self.window.dragged)
                     return _wx.DragCopy
             return _wx.DragNone
 
@@ -102,6 +102,9 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
+        # The indexes being dragged stay here - the data we drag just tells
+        # the target the drag is ours, not the one of another list or Bash
+        self.dragged, self.drag_id = [], b'%d %d;' % (os.getpid(), id(self))
         self._header_offset: int | None = None # see GetItemRect
 
     def _doResize(self):
@@ -152,24 +155,16 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
-        indexes = []
-        start = stop = -1
-        for index in range(self.GetItemCount()):
-            if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
-                if stop >= 0 and self.dndOnlyCont:
-                    # Only allow moving selections if they are in a
-                    # continuous block...they aren't
-                    return
-                if start < 0:
-                    start = index
-                indexes.append(index)
-            else:
-                if start >=0 > stop:
-                    stop = index - 1
-        if stop < 0: stop = self.GetItemCount()
-        selected = pickle.dumps(indexes, 1)
-        ldata = _wx.CustomDataObject(u'ListIndexes')
-        ldata.SetData(selected)
+        self.dragged, index = [], self.GetFirstSelected()
+        while index != -1:
+            self.dragged.append(index)
+            index = self.GetNextSelected(index)
+        if not self.dragged or (self.dndOnlyCont and self.dragged[-1] -
+                                self.dragged[0] >= len(self.dragged)):
+            # Only allow moving selections if they are in a continuous block
+            return
+        ldata = _wx.CustomDataObject('ListIndexes')
+        ldata.SetData(self.drag_id)
         data_object = _wx.DataObjectComposite()
         data_object.Add(ldata)
         source = _wx.DropSource(self)
