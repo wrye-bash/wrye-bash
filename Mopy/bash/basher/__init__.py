@@ -1025,8 +1025,9 @@ class ModList(_ModsUIList):
         elif wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
             if not self.dndAllow(event=None):
-                # Veto the event so Up/Down arrows do not move the selection
-                return EventResult.CANCEL
+                # Finish the event (a key event has no veto) so Up/Down arrows
+                # do not move the selection
+                return EventResult.FINISH
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self._get_selected()
             previous = -1
@@ -1042,15 +1043,13 @@ class ModList(_ModsUIList):
                 newIndex := (first := c[0]) + moveMod) >= 0 and (
                     (last := c[-1]) + moveMod) < self.item_count]
             self._drop_dexes(chunks)
-        elif wrapped_evt.is_cmd_down:
+        elif wrapped_evt.is_cmd_down and kcode in (ord('Z'), ord('Y')):
             # Ctrl+Y/Ctrl+Shift+Z redo last load order or active plugins change
             # Ctrl+Z - undo last load order or active plugins change
-            redo = wrapped_evt.is_shift_down if kcode == ord('Z') else \
-                (kcode == ord('Y') or None)
-            if redo is not None:
-                lordata = self.data_store.wip_lo_undo_redo_load_order(redo)
-                self.propagate_refresh(lordata) # no additions or removals
-        else:
+            redo = wrapped_evt.is_shift_down if kcode == ord('Z') else True
+            lordata = self.data_store.wip_lo_undo_redo_load_order(redo)
+            self.propagate_refresh(lordata) # no additions or removals
+        else: # the other Ctrl+keys too - Ctrl+Tab, the ones of the list
             return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
@@ -2454,7 +2453,7 @@ class InstallersList(UIList):
                 CreateNewProject.display_dialog(self)
             return EventResult.FINISH
         else:
-            super()._handle_key_up(wrapped_evt)
+            return super()._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
@@ -3589,7 +3588,6 @@ class BashFrame(WindowFrame):
         self.warn_game_ini()
         #--Done (end recursion blocker)
         self.inRefreshData = False
-        return EventResult.FINISH
 
     @balt.conversation
     def _warn_imported_launchers(self): ##:(734:570)

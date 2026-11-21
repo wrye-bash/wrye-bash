@@ -761,7 +761,8 @@ class UIList(PanelWin):
                 self.DoColumnMenu(0)
             elif self.context_links:
                 self.context_links.popup_menu(self, selected)
-        return EventResult.FINISH
+            return EventResult.FINISH
+        # else the event is of the rename prompt - let it show its own menu
 
     #--Callbacks --------------------------------------------------------------
     def _handle_mouse_motion(self, wrapped_evt, lb_dex_and_flags):
