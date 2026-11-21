@@ -40,7 +40,6 @@ from wx.grid import Grid
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _AComponent, _AEvtHandler
 from .buttons import ImageButton
-from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from .images import GuiImage
 from .menus import Links, Menu
@@ -510,8 +509,10 @@ class GlobalMenu(_AEvtHandler):
             menu_processor)
         self._on_menu_closed = frame._evt_handler(_wx.EVT_MENU_CLOSE,
             menu_processor)
+        # never skipped - wx would show the help in the first field too
         self._on_menu_highlight = frame._evt_handler(
-            _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()])
+            _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()],
+            skip=False)
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
         self._on_menu_highlight.subscribe(self._handle_menu_highlight)
@@ -588,7 +589,6 @@ class GlobalMenu(_AEvtHandler):
         """Internal callback, shows the help of the item hovered in a menu."""
         if Links.Popup:
             self._frame.set_status_info(Links.Popup.item_help(item_id))
-        return EventResult.FINISH # wx would show it in the first field too
 
 class Dragger(_AComponent):
     """Class that supports a drag and drop operation on one of its elements."""

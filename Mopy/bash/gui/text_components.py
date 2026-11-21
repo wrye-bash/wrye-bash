@@ -35,7 +35,6 @@ from wx.lib.stattext import GenStaticText as _GenStaticTextWx
 from wx.lib.wordwrap import wordwrap as _wordwrap_wx
 
 from .base_components import _AComponent, scaled
-from .events import EventResult
 
 # Text Input ------------------------------------------------------------------
 class TextAlignment(Enum):
@@ -207,8 +206,9 @@ class TextField(_ATextInput):
         See _ATextInput for documentation on kwargs."""
         super().__init__(parent, *args, multiline=False,
             style=_wx.TE_PROCESS_ENTER, **kwargs)
-        # Handle Enter -> OK button event to parent
-        self._on_enter = self._evt_handler(_wx.EVT_TEXT_ENTER)
+        # Handle Enter -> OK button event to parent. Never skipped - wx would
+        # click the default button itself (or beep)
+        self._on_enter = self._evt_handler(_wx.EVT_TEXT_ENTER, skip=False)
         self._on_enter.subscribe(self._handle_enter)
 
     def _handle_enter(self):
@@ -219,12 +219,12 @@ class TextField(_ATextInput):
             _wx.ID_OK)
         if ok_btn and ok_btn.IsEnabled() and ok_btn.IsShownOnScreen():
             new_evt = _wx.PyCommandEvent(_wx.EVT_BUTTON.typeId, ok_btn.GetId())
-            # Schedule this to run after we've finished handling this event
-            _wx.CallAfter(_wx.PostEvent, ok_btn, new_evt)
-        return EventResult.FINISH
+            # Queued - it runs after we've finished handling this event
+            _wx.PostEvent(ok_btn, new_evt)
 
 class SearchBar(TextField):
-    """A variant of TextField that looks like a typical search bar."""
+    """A variant of TextField that looks like a typical search bar. Enter
+    does not click the OK button of its window."""
     _native_widget: _wx.SearchCtrl
 
     def __init__(self, parent, *args, hint=_('Search'), **kwargs):
@@ -234,6 +234,8 @@ class SearchBar(TextField):
         :param hint: The string to show if nothing has been entered into
             the search bar. Optional, defaults to 'Search'."""
         super().__init__(parent, *args, hint=hint, **kwargs)
+        # On wxMSW the search control keeps the Enter to itself - same for all
+        self._on_enter.unsubscribe(self._handle_enter)
         # Implement behavior for the small cancel button: show or hide based on
         # text content (present if text is present and vice versa)
         def _update_clear_btn_visibility(new_text: str):

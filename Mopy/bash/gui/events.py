@@ -108,9 +108,16 @@ Return Values:
        can be canceled, all others will raise a RuntimeError instead.
   An event that no listener finished or canceled is passed on to wx (we Skip
   it), to handle it natively. Some must not be: a paint handler replaces the
-  native one, and wx asserts on a mouse capture lost event that nobody
-  processed. Create the handlers of those with skip=False - that is up to the
-  event, not to each of its listeners."""
+  native one, wx asserts on a mouse capture lost event that nobody processed
+  and presses the default button itself on an Enter we already acted on.
+  Create the handlers of those with skip=False - that is up to the event, not
+  to each of its listeners.
+  Return FINISH only when the listener did what wx and the control would do,
+  or to prevent that: a finished click or key never reaches the control (no
+  focus, no selection, no typing), wx's own handlers do not run (a finished
+  OK click does not close its dialog) and the parents do not get the event -
+  clicks on controls, menu, notebook and context menu events travel up to
+  them otherwise."""
 from __future__ import annotations
 
 __author__ = 'Infernio'

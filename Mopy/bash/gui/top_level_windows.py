@@ -465,13 +465,10 @@ class TabbedPanel(_APageComponent):
 
     def __init__(self, parent, multiline=False):
         super().__init__(parent, style=_wx.NB_MULTILINE if multiline else 0)
+        # never skipped - else it would go on to the notebook we may be in
         self.on_nb_page_change = self._evt_handler(
             _wx.EVT_NOTEBOOK_PAGE_CHANGED,
-            lambda event: [event.GetId(), event.GetSelection()])
-
-    def stop_event(self, event_id):
-        """InstallersDetails event will propagate to the BashFrame.notebook."""
-        return event_id != self._native_widget.GetId()
+            lambda event: [event.GetSelection()], skip=False)
 
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different
