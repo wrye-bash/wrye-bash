@@ -2613,10 +2613,8 @@ class InstallersDetails(_SashDetailsPanel):
     def _get_sub_splitter(self):
         return Splitter(self.left, sash_gravity=0.5)
 
-    def OnShowInfoPage(self, event_id, selected_index):
+    def OnShowInfoPage(self, selected_index):
         """A specific info page has been selected."""
-        if self.gNotebook.stop_event(event_id):
-            return EventResult.FINISH
         gPage, initialized = self.infoPages[selected_index]
         if self.detail_fn and not initialized:
             self.RefreshInfoPage(selected_index, self.file_info)
@@ -3411,10 +3409,8 @@ class BashNotebook(DnDNotebook):
         settings[u'bash.tabs.order'] = OrderedDict(
             (k, settings[u'bash.tabs.order'][k]) for k in newOrder)
 
-    def OnShowPage(self, event_id, selected_index):
+    def OnShowPage(self, selected_index):
         """Call panel's ShowPanel() on the current panel."""
-        if self.stop_event(event_id):
-            return EventResult.FINISH
         self.currentPage.ShowPanel()
 
     def next_tab(self, forward):
