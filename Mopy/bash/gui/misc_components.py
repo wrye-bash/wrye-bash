@@ -43,7 +43,7 @@ from .buttons import ImageButton
 from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from .images import GuiImage
-from .menus import Links
+from .menus import Links, Menu
 from .text_components import TextField
 from ..bolt import Path, dict_sort
 
@@ -524,8 +524,8 @@ class GlobalMenu(_AEvtHandler):
 
     def register_category_handler(self, cat_label: str, cat_handler):
         """Registers the specified handler for the specified category. The
-        handler should be a callback that will be given a _GMCategory instance,
-        which it should populate with links."""
+        handler should be a callback that will be given the Menu of the
+        category, which it should populate with links."""
         self._category_handlers[cat_label] = cat_handler
 
     def release_bindings(self):
@@ -560,7 +560,7 @@ class GlobalMenu(_AEvtHandler):
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
         # Need to set this, otherwise help text won't be shown
-        Links.Popup = wx_menu
+        Links.Popup = Menu._wrap_object(wx_menu)
         try:
             populate_cb = self._category_handlers[wx_menu.category_label]
         except KeyError:
@@ -575,10 +575,9 @@ class GlobalMenu(_AEvtHandler):
             # Clear the menu and repopulate it. Have to do this JIT, since the
             # checked/enabled/appended state of links will depend on the
             # current state of WB itself.
-            for old_menu_item in wx_menu.GetMenuItems():
-                wx_menu.Unbind(_wx.EVT_MENU, old_menu_item) # see ItemLink
-                wx_menu.DestroyItem(old_menu_item)
-            populate_cb(wx_menu)
+            gm_category = Menu._wrap_object(wx_menu)
+            gm_category.clear_items()
+            populate_cb(gm_category)
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""
@@ -588,8 +587,7 @@ class GlobalMenu(_AEvtHandler):
     def _handle_menu_highlight(self, item_id):
         """Internal callback, shows the help of the item hovered in a menu."""
         if Links.Popup:
-            item = Links.Popup.FindItemById(item_id)
-            self._frame.set_status_info(item.GetHelp() if item else '')
+            self._frame.set_status_info(Links.Popup.item_help(item_id))
         return EventResult.FINISH # wx would show it in the first field too
 
 class Dragger(_AComponent):

@@ -42,7 +42,8 @@ from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CancelButton, CENTER, CheckListBox, \
     Color, DialogWindow, DirOpen, EventResult, FileOpen, FileSave, \
     GlobalMenu, HLayout, OkButton, \
-    LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
+    LayoutOptions, ListBox, Links, LogDialog, LogFrame, Menu, MenuItemKind, \
+    PanelWin, TextArea, \
     UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
     web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
     askNumber, askYes, askWarning, showOk, showError, showWarning, showInfo, \
@@ -1315,8 +1316,8 @@ class Link(object):
     class attribute, or if it depends on current state by overriding
     _initData().
     Link objects are _not_ menu items. They are instantiated _once_ in
-    InitLinks(). Their AppendToMenu() is responsible for creating a wx MenuItem
-    or wx submenu and append this to the currently popped up wx menu.
+    InitLinks(). Their AppendToMenu() is responsible for appending an item or
+    a submenu to the Menu that is being popped up.
     Contract:
     - Link.__init__() is called _once_, _before the Bash app is initialized_,
     except for "local" Link subclasses used in ChoiceLink related code.
@@ -1356,8 +1357,8 @@ class Link(object):
         self.window = window
         self.selected = selection
 
-    def AppendToMenu(self, menu, window, selection):
-        """Creates a wx menu item and appends it to :menu.
+    def AppendToMenu(self, menu: Menu, window, selection):
+        """Appends a menu item to :menu.
 
         Link implementation calls _initData and returns None.
         """
@@ -1450,7 +1451,7 @@ class ItemLink(Link):
 
     Subclasses MUST define _text (preferably class) attribute and should
     override _help. Registers the Execute() method on menu events."""
-    kind = wx.ITEM_NORMAL # The default in wx.MenuItem(... kind=...)
+    kind = MenuItemKind.NORMAL
     _help = u''           # The tooltip to show at the bottom of the GUI
     _keyboard_hint = ''   # The keyboard shortcut hint to show, if any
 
@@ -1477,24 +1478,10 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        full_link_text = _AComponent._escape(self.link_text)
-        if self._keyboard_hint: # \u200b: a hint, not a wx accelerator
-            full_link_text += f'\t{self._keyboard_hint}\u200b'
-        # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
-        menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
-                               self.__class__.kind)
-        # wx tries the item's menu first - the binding dies with the menu
-        menu.Bind(wx.EVT_MENU, self.__Execute, menuItem)
-        menu.Append(menuItem)
-        return menuItem
+        return menu.append_item(self.link_text, self.link_help, self.Execute,
+                                self.__class__.kind, self._keyboard_hint)
 
     # Callbacks ---------------------------------------------------------------
-    # noinspection PyUnusedLocal
-    def __Execute(self, __event):
-        """Eat up wx event - code outside balt should not use it."""
-        self.Execute()
-        return EventResult.FINISH
-
     def Execute(self):
         """Event: link execution."""
         raise NotImplementedError
@@ -1517,14 +1504,13 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super().AppendToMenu(menu, window, selection)
-        subMenu = wx.Menu()
-        appended_menu = menu.AppendSubMenu(subMenu, self._text)
+        subMenu, appended_menu = menu.append_submenu(self._text)
         if not self._enable():
-            appended_menu.Enable(False)
+            appended_menu.enabled = False
         else: # If we know we're not enabled, we can skip adding child links
             for link in self.links:
                 link.AppendToMenu(subMenu, window, selection)
-            appended_menu.Enable(self._enable_menu())
+            appended_menu.enabled = self._enable_menu()
         return subMenu
 
     def _enable_menu(self):
@@ -1574,7 +1560,7 @@ class ChoiceLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append Link items."""
         submenu = super(ChoiceLink, self).AppendToMenu(menu, window, selection)
-        if isinstance(submenu, wx.Menu): # we inherit a Menu, append to it
+        if isinstance(submenu, Menu): # we inherit a Menu, append to it
             menu = submenu
         for link in self.extraItems:
             link.AppendToMenu(menu, window, selection)
@@ -1585,7 +1571,7 @@ class ChoiceLink(Link):
                      if not isinstance(x, SeparatorLink)])
         for link in (self.choiceLinkType(_text=txt) for txt in self._choices):
             if i % 30 == 0:
-                menu.Break()
+                menu.append_break()
             link.AppendToMenu(menu, window, selection)
             i += 1
         # returns None
@@ -1614,7 +1600,7 @@ class SeparatorLink(Link):
 
     def AppendToMenu(self, menu, window, selection):
         """Add separator to menu."""
-        menu.AppendSeparator()
+        menu.append_separator()
 
 # Link Mixin ------------------------------------------------------------------
 class AppendableLink(Link):
@@ -1662,7 +1648,7 @@ class EnabledLink(ItemLink):
     def AppendToMenu(self, menu, window, selection):
         menuItem = super(EnabledLink, self).AppendToMenu(menu, window,
                                                          selection)
-        menuItem.Enable(self._enable())
+        menuItem.enabled = self._enable()
         return menuItem
 
 class OneItemLink(EnabledLink):
@@ -1678,17 +1664,17 @@ class OneItemLink(EnabledLink):
     def _selected_info(self): return self._first_selected()
 
 class CheckLink(ItemLink):
-    kind = wx.ITEM_CHECK
+    kind = MenuItemKind.CHECK
 
     def _check(self): raise NotImplementedError
 
     def AppendToMenu(self, menu, window, selection):
         menuItem = super(CheckLink, self).AppendToMenu(menu, window, selection)
-        menuItem.Check(self._check())
+        menuItem.is_checked = self._check()
         return menuItem
 
 class RadioLink(CheckLink):
-    kind = wx.ITEM_RADIO
+    kind = MenuItemKind.RADIO
 
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
