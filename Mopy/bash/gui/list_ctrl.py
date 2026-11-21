@@ -52,8 +52,8 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
     functionality, you can provide callbacks for, or override the following functions:
     OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
     OnDropIndexes(self,indexes,newPos) - called to move the specified indexes to new starting position 'newPos'
-    You must provide a callback for fnDndAllow(self, event) - return true to
-    allow dnd, false otherwise
+    You must provide a callback for fnDndAllow() - return true to allow dnd,
+    false otherwise
 
     OnDropFiles callback:   fnDropFiles
     OnDropIndexes callback: fnDropIndexes
@@ -154,7 +154,7 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
                 self._scroll_rows(1)
 
     def OnBeginDrag(self, event):
-        if not self.fnDndAllow(event): return
+        if not self.fnDndAllow(): return # wx starts no drag by itself
         self.dragged, index = [], self.GetFirstSelected()
         while index != -1:
             self.dragged.append(index)
@@ -311,8 +311,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return (ec := self.__ec()) and ec.GetSelection()
 
     def ec_set_f2_handler(self, on_char_handler):
-        """Sets a handler for when the F2 key is pressed. Note that you have to
-        return EventResult.FINISH when handling this event."""
+        """Sets a handler for when the F2 key is pressed. Return
+        EventResult.FINISH if you handled the key."""
         ec = self.__ec()
         if ec is None: return
         on_char = EventHandler(ec, _wx.EVT_KEY_DOWN,

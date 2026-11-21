@@ -129,7 +129,8 @@ class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
 
     Events:
-     - on_activate(): Posted when the frame is activated.
+     - on_activate(is_active: bool): Posted when the frame is activated or
+       deactivated.
      """
     _min_size = _def_size = (250, 250)
     _native_widget: _wx.Frame
@@ -251,8 +252,9 @@ class _LogWin(_TopLevelWin):
                          sizes_dict=sizes_dict, **kwargs)
         self.set_min_size(200, 200)
         layout_kw = {'border': 2}
-        #--Buttons
-        ok_butt = OkButton(self, on_click=self.close_win)
+        #--Buttons - wx ends a modal dialog on OK itself
+        ok_butt = OkButton(self, on_click=None if isinstance(
+            self, DialogWindow) else self.close_win)
         if wrye_log:
             #--Text
             self._html_ctrl = DocumentViewer(self, dv_bitmaps)

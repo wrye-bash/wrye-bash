@@ -558,12 +558,12 @@ class WithCharEvents(_AComponent):
         letter is pressed by using this. Note that you have to return
         EventResult.FINISH if you override behavior for a particular key code,
         otherwise the OS behavior will also be executed.
-      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): Posted when
-        a key is starting to be released. OS handlers for this key have run if
-        they weren't overriden by an on_key_down subscription."""
+      - on_key_up(wrapped_evt: _WrapKeyEvt): Posted when a key is starting to
+        be released. OS handlers for this key have run if they weren't
+        overriden by an on_key_down subscription."""
     class _WrapKeyEvt:
-        def __init__(self, mouse_evt: _wx.KeyEvent):
-            self.__key_evt = mouse_evt
+        def __init__(self, key_evt: _wx.KeyEvent):
+            self.__key_evt = key_evt
 
         @property
         def key_code(self):

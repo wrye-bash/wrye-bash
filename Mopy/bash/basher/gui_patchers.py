@@ -30,7 +30,7 @@ from .. import bass, bolt, bosh, load_order
 from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, text_wrap
 from ..gui import TOP, AObject, Button, CheckBox, CheckListBox, \
-    DeselectAllButton, EventResult, FileOpenMultiple, HBoxedLayout, Label, \
+    DeselectAllButton, FileOpenMultiple, HBoxedLayout, Label, \
     LayoutOptions, Lazy, ListBox, Links, PanelWin, SearchBar, \
     SelectAllButton, Spacer, TextArea, VLayout, askText, showError, askNumber
 from ..patcher.base import MultiTweakItem
@@ -280,7 +280,6 @@ class _ChoiceMenuMixin(object):
                 x, y = wrapped_evt.evt_pos
                 if max(abs(x - oldx), abs(y - oldy)) > 4:
                     self.mouse_pos = None
-                return EventResult.FINISH ##: needed?
         else:
             self.mouse_pos = None
 

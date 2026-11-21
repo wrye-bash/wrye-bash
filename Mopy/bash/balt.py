@@ -897,7 +897,6 @@ class UIList(PanelWin):
         # Clicking another item to end the edit selects it before the edit
         # ends (on wxGTK at least) - remember what we are renaming
         self._renaming = self.GetSelected()
-        return EventResult.FINISH  ##: needed?
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
@@ -1185,8 +1184,7 @@ class UIList(PanelWin):
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation
-    def dndAllow(self, event): # Disallow drag and drop by default
-        if event: event.Veto()
+    def dndAllow(self): # Disallow drag and drop by default
         return False
 
     def OnDropFiles(self, x, y, filenames): raise NotImplementedError
@@ -2030,7 +2028,9 @@ class BashStatusBar(DnDStatusBar):
         self.dragStart = mouse_evnt.evt_pos[0] # a jittery click is no drag
         if wx.Platform == '__WXMSW__':
             button_link._native_widget.CaptureMouse()
-        return EventResult.FINISH # we don't skip - blocks EVT_MOTION somehow
+        # we don't skip - the native button must not see the press, it would
+        # take the mouse capture itself and click on release
+        return EventResult.FINISH
 
     def _on_drag_end_forced(self):
         self._reset_drag()

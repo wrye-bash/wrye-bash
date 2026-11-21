@@ -126,7 +126,7 @@ class StatusBarButton(Lazy, WithDragEvents, ClickableImage):
     def DoPopupMenu(self):
         if self.mainMenu:
             self.mainMenu.popup_menu(self, 0)
-            return EventResult.FINISH ##: Kept it as such, test if needed
+            return EventResult.FINISH # our menu, not one of our parents
 
     # Helper function to get OBSE version
     @property
