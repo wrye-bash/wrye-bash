@@ -590,7 +590,7 @@ class WithDragEvents(WithMouseEvents):
     """An _AComponent that handles drag events for the mouse - alpha.
 
     Drag events.
-      - on_mouse_capture_lost(wrapped_evt: _WrapMouseEvt) - only on __WXMSW__.
+      - on_mouse_capture_lost() - only on __WXMSW__, never passed on to wx.
     """
     bind_lclick_up = bind_lclick_down = bind_motion = True
 
