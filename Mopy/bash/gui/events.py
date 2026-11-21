@@ -105,7 +105,12 @@ Return Values:
        but that it shouldn't be propagated to the next listener, if one exists.
     3. EventResult.CANCEL: Indicates that the event should not be allowed to
        execute. Only events that explicitly mention it in their documentation
-       can be canceled, all others will raise a RuntimeError instead."""
+       can be canceled, all others will raise a RuntimeError instead.
+  An event that no listener finished or canceled is passed on to wx (we Skip
+  it), to handle it natively. Some must not be: a paint handler replaces the
+  native one, and wx asserts on a mouse capture lost event that nobody
+  processed. Create the handlers of those with skip=False - that is up to the
+  event, not to each of its listeners."""
 from __future__ import annotations
 
 __author__ = 'Infernio'
@@ -153,7 +158,7 @@ class EventHandler(object):
     """This class implements the actual event processing, catching native wx
     events, applying processors to them and posting the results to all relevant
     listeners."""
-    def __init__(self, wx_owner, wx_event_id, arg_processor):
+    def __init__(self, wx_owner, wx_event_id, arg_processor, skip=True):
         """Creates a new EventHandler wrapping the specified wx event.
 
         :param wx_owner: The wx object that the event is based on. This is what
@@ -161,8 +166,11 @@ class EventHandler(object):
         :param wx_event_id: The wx ID of the event in question. For example,
                             wx.EVT_TEXT.
         :param arg_processor: The processor that should be applied to the event
-                              object before passing it on to the listeners."""
+                              object before passing it on to the listeners.
+        :param skip: Whether to pass the event on to wx, unless a listener
+                     finishes or cancels it."""
         self._arg_processor = arg_processor
+        self._skip = skip
         self._listeners = []
         self._wx_owner = wx_owner
         self._wx_event_id = wx_event_id
@@ -194,8 +202,8 @@ class EventHandler(object):
                         f'{event.__class__!r}) that cannot be canceled.')
             else:raise RuntimeError(f'Incorrect return value ({result!r}) for '
                                     f'EventHandler listener.')
-        # Need to propagate it up the wx chain
-        event.Skip()
+        if self._skip: # Need to propagate it up the wx chain
+            event.Skip()
 
     def subscribe(self, listener, *, _pos=None):
         """Subscribes the specified listener to this event handler. The order

@@ -356,7 +356,7 @@ class Splitter(_AComponent):
         nw.SetSashGravity(sash_gravity)
         # The position to go back to - gravity moves the sash on its own
         self._keep_pos, self._wanted_pos = not sash_gravity, None
-        self._on_paint = self._evt_handler(_wx.EVT_PAINT)
+        self._on_paint = self._evt_handler(_wx.EVT_PAINT, skip=False)
         self._on_paint.subscribe(self._paint_sash)
         self._on_size = self._evt_handler(_wx.EVT_SIZE)
         self._on_size.subscribe(self._fit_panes)
@@ -426,7 +426,6 @@ class Splitter(_AComponent):
                 _wx.SYS_COLOUR_BTNSHADOW)))
             dc.DrawRoundedRectangle(x + (w - gw) // 2, y + (h - gh) // 2, gw,
                                     gh, scaled(1))
-        return EventResult.FINISH
 
     def get_sash_pos(self):
         return self._wanted_pos or self._native_widget.GetSashPosition()
@@ -567,7 +566,6 @@ class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
     def _on_drag_end_forced(self):
         self.__dragging = _wx.NOT_FOUND
         self.set_cursor()
-        return EventResult.FINISH # wx asserts if this event is skipped
 
     def _on_drag_end(self, mouse_evnt):
         if self.__dragging != _wx.NOT_FOUND:
