@@ -216,8 +216,9 @@ class _AEvtHandler(AObject):
             callback(**received_kwargs)
         self._native_widget.Bind(binder, _receiver)
         def _sender(**kwargs):
-            _wx.PostEvent(self._native_widget, event_cls(**kwargs,
-                _kwargs=list(kwargs))) # So that we can access them again
+            if self._native_widget: # else destroyed - a thread may call this
+                _wx.PostEvent(self._native_widget, event_cls(**kwargs,
+                    _kwargs=list(kwargs))) # So that we can access them again
         return _sender
 
     def pause_drawing(self) -> _ACFrozen:

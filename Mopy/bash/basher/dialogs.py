@@ -118,7 +118,7 @@ class ImportFaceDialog(DialogWindow):
         selections = self.listBox.lb_get_selections()
         if not selections:
             bell()
-            return
+            return EventResult.FINISH # leave the dialog open
         itemDex = selections[0]
         item = self.list_items[itemDex]
         #--Do import
@@ -225,7 +225,7 @@ class CreateNewProject(DialogWindow):
             showError(self, _(
                 'There is already a project with that name!') + '\n' + _(
                 'Pick a different name for the project and try again.'))
-            return
+            return EventResult.FINISH # leave the dialog open
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
         with TempDir(bolt_path=True) as tmp_dir:
@@ -1042,7 +1042,7 @@ class ImportOrderDialog(DialogWindow, APackageOrderParser):
     def _handle_ok(self):
         """Internal callback, performs the actual reordering etc."""
         imp_path = self._import_target_field.text_content
-        if not imp_path: return
+        if not imp_path: return EventResult.FINISH # leave the dialog open
         self.first_line = True
         self._partial_package_order = []
         try:
@@ -1051,7 +1051,7 @@ class ImportOrderDialog(DialogWindow, APackageOrderParser):
             balt.showError(self, _('The selected file is not a valid package '
                                    'order CSV export.'),
                 title=_('Import Order - Invalid CSV'))
-            return
+            return EventResult.FINISH # leave the dialog open
         bain_idata = self._bain_parent.data_store
         reorder_err = bain_idata.reorder_packages(self._partial_package_order)
         bain_idata.refresh_ns()
