@@ -608,7 +608,6 @@ class MasterList(_ModsUIList):
                 masterInfo.old_name] = masterInfo.curr_name
             # populate, refresh must be called last
             self.PopulateItem(evt_index, **self._cache_rui_structs())
-            return EventResult.FINISH ##: needed?
         elif evt_label == u'':
             return EventResult.CANCEL
         else:
@@ -948,7 +947,7 @@ class ModList(_ModsUIList):
     def OnDropIndexes(self, indexes, newIndex):
         self._drop_dexes([[indexes[0], indexes[-1], newIndex]])
 
-    def dndAllow(self, event):
+    def dndAllow(self):
         msg = u''
         continue_key = u'bash.mods.dnd.column.continue'
         if self.sort_column not in self._dndColumns:
@@ -962,7 +961,7 @@ class ModList(_ModsUIList):
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key, show_cancel=False)
-            return super(ModList, self).dndAllow(event) # disallow
+            return super(ModList, self).dndAllow() # disallow
         return True
 
     #--Populate Item
@@ -1024,7 +1023,7 @@ class ModList(_ModsUIList):
             self._toggle_active_state(*toggle_target)
         elif wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
-            if not self.dndAllow(event=None):
+            if not self.dndAllow():
                 # Finish the event (a key event has no veto) so Up/Down arrows
                 # do not move the selection
                 return EventResult.FINISH
@@ -2379,13 +2378,13 @@ class InstallersList(UIList):
         self.panel.frameActivated = True
         self.panel.ShowPanel(focus_list=True)
 
-    def dndAllow(self, event):
+    def dndAllow(self):
         if not self.sort_column in self._dndColumns:
             msg = _(u"Drag and drop in the Installer's list is only allowed "
                     u'when the list is sorted by install order')
             balt.askContinue(self, msg, 'bash.installers.dnd.column.continue',
                 show_cancel=False)
-            return super(InstallersList, self).dndAllow(event) # disallow
+            return super(InstallersList, self).dndAllow() # disallow
         return True
 
     def _handle_key_down(self, wrapped_evt):
@@ -3672,7 +3671,7 @@ class BashFrame(WindowFrame):
     def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""
         try:
-            # Save sizes here, in the finally clause position is not saved - todo PY3: test if needed
+            # Save sizes here, in the finally clause position is not saved
             super(BashFrame, self).on_closing(destroy=False)
             self.bind_refresh(bind=False)
             self.SaveSettings(destroy=True)
