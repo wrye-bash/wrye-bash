@@ -1447,7 +1447,7 @@ class Link(object):
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):
-    """Create and append a wx menu item.
+    """Append an item to the menu.
 
     Subclasses MUST define _text (preferably class) attribute and should
     override _help. Registers the Execute() method on menu events."""

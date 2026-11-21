@@ -36,11 +36,13 @@ class MenuItemKind(Enum):
     RADIO = _wx.ITEM_RADIO
 
 class MenuItem(AObject):
-    """An item of a Menu, that returned it on appending it."""
+    """An item of a Menu, that returned it on appending it. It dies with its
+    menu, unbeknownst to us - set its state right then, do not keep it."""
     _native_widget: _wx.MenuItem
 
     @property
     def enabled(self) -> bool:
+        """Whether the user can select this item."""
         return self._native_widget.IsEnabled()
 
     @enabled.setter
@@ -49,6 +51,7 @@ class MenuItem(AObject):
 
     @property
     def is_checked(self) -> bool:
+        """Whether this check or radio item is checked."""
         return self._native_widget.IsChecked()
 
     @is_checked.setter
@@ -73,16 +76,17 @@ class Menu(_AEvtHandler):
         self._native_widget.Bind(_wx.EVT_MENU, lambda _event: on_selected(),
                                  native_item)
         self._native_widget.Append(native_item)
-        return MenuItem._wrap_object(native_item)
+        return MenuItem._wrap_object(native_item, type_check=False)
 
     def append_submenu(self, menu_label: str) -> tuple[Menu, MenuItem]:
         """Append a submenu - return it, and its item in this menu."""
         sub_menu = Menu()
         return sub_menu, MenuItem._wrap_object(
             self._native_widget.AppendSubMenu(sub_menu._native_widget,
-                                              menu_label))
+                self._escape(menu_label)), type_check=False)
 
     def append_separator(self):
+        """Append a line separating the items before it and after it."""
         self._native_widget.AppendSeparator()
 
     def append_break(self):
