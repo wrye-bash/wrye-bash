@@ -2034,9 +2034,6 @@ class BashStatusBar(DnDStatusBar):
 
     def _on_drag_end_forced(self):
         self._reset_drag()
-        # NOTE: Don't Skip, otherwise wxPython treats this event as unhandled,
-        # and raises an exception.
-        return EventResult.FINISH
 
     def _on_drag_end(self, mouse_evnt):
         __, button_link = self._getButtonIndex(mouse_evnt)

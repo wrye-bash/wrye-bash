@@ -61,7 +61,7 @@ class Picture(_AComponent):
         self.background = self._get_brush(
             background or self._native_widget.GetBackgroundColour())
         #--Events
-        self._on_paint = self._evt_handler(_wx.EVT_PAINT)
+        self._on_paint = self._evt_handler(_wx.EVT_PAINT, skip=False)
         self._on_paint.subscribe(self._handle_paint)
         self._on_size = self._evt_handler(_wx.EVT_SIZE)
         self._on_size.subscribe(self._handle_resize)
@@ -124,8 +124,7 @@ class Picture(_AComponent):
         self._native_widget.Update()
 
     def _handle_paint(self):
-        dc = _wx.BufferedPaintDC(self._native_widget, self.buffer)
-        return EventResult.FINISH
+        _wx.BufferedPaintDC(self._native_widget, self.buffer) # paints it
 
 class PictureWithCursor(Picture, WithMouseEvents):
     bind_lclick_double = bind_middle_up = True

@@ -199,9 +199,9 @@ class _AEvtHandler(AObject):
     """Wrap an EvtHandler instance."""
     _native_widget: _wx.EvtHandler
 
-    def _evt_handler(self, evt, arg_proc=null_processor):
+    def _evt_handler(self, evt, arg_proc=null_processor, skip=True):
         """Register an EventHandler on _native_widget"""
-        return EventHandler(self._native_widget, evt, arg_proc)
+        return EventHandler(self._native_widget, evt, arg_proc, skip)
 
     def _make_custom_event(self, callback):
         """Creates a wrapper around a custom event.
@@ -601,7 +601,7 @@ class WithDragEvents(WithMouseEvents):
         if on_drag_end: self.on_mouse_left_up.subscribe(on_drag_end)
         if on_drag_end_forced and _wx.Platform == '__WXMSW__':
             self.on_mouse_capture_lost = self._evt_handler(
-                _wx.EVT_MOUSE_CAPTURE_LOST)
+                _wx.EVT_MOUSE_CAPTURE_LOST, skip=False) # wx asserts if we do
             self.on_mouse_capture_lost.subscribe(on_drag_end_forced)
         if on_drag: self.on_mouse_motion.subscribe(on_drag)
 
