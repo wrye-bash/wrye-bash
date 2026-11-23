@@ -1433,27 +1433,32 @@ class StatusBarPage(_AFixedPage):
                  _('Show the buttons that are hidden on the status bar.')),
                 ('not_found', _('Not Found'), _(
                     'Show the launchers whose application was not found.')))}
-        # Name, path and args
-        self._launcher_path = FilePicker(self, hint=_('Path to application'))
+        # Name, path and args - Enter in them saves the launcher, if it can be
+        # saved: OK would drop the edit
+        def save():
+            if self._save_launcher_btn.enabled: self._save_launcher()
+        self._launcher_path = FilePicker(self, hint=_('Path to application'),
+                                         on_enter=save)
         self._launcher_path.button.tooltip = _('Select a file to launch.')
         self._launcher_path.text_field.tooltip = _('Path to file')
-        self._launcher_args_txt = TextField(self,
+        self._launcher_args_txt = TextField(self, on_enter=save,
                                             hint=_('Command line arguments'))
         self._launcher_args_txt.tooltip = _('Command line arguments')
-        self._launcher_start_in = DirPicker(self,
+        self._launcher_start_in = DirPicker(self, on_enter=save,
             hint=_('The folder of the application if empty'))
         self._launcher_start_in.button.tooltip = _(
             'Select the folder to start the application in.')
         self._launcher_icon = FilePicker(self, wildcard=_('Icons') + ' (*.ico;'
             '*.png;*.svg;*.exe;*.dll)|*.ico;*.png;*.svg;*.exe;*.dll', hint=_(
             'The icon of the application if empty - add ",index" for an exe '
-            'or dll'))
+            'or dll'), on_enter=save)
         self._launcher_icon.button.tooltip = _(
             'Select an icon, or an exe or dll whose icon to use.')
         self._hide_chk = CheckBox(self, _('Hide on the status bar'),
             chkbx_tooltip=_('Hide the status bar button of the selected '
                             'launcher.'), on_check=self._on_hide)
-        self._launcher_name_txt = TextField(self, hint=_('Shortcut name'))
+        self._launcher_name_txt = TextField(self, hint=_('Shortcut name'),
+                                            on_enter=save)
         self._launcher_name_txt.tooltip = _('Shortcut name')
         self._save_launcher_btn = SaveButton(self, btn_label=_('Save'),
             btn_tooltip=_('Save currently selected launcher.'),

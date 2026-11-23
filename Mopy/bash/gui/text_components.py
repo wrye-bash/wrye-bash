@@ -197,12 +197,14 @@ class TextArea(_ATextInput):
 
 class TextField(_ATextInput):
     """A single-line text edit widget. Pressing Enter while it is focused will
-    send an event to the parent's OK button if it exists. See the documentation
-    for _ATextInput for a list of the events this component offers."""
-    def __init__(self, parent, *args, **kwargs):
+    call on_enter if specified, else send an event to the parent's OK button
+    if it exists. See the documentation for _ATextInput for a list of the
+    events this component offers."""
+    def __init__(self, parent, *args, on_enter=None, **kwargs):
         """Creates a new TextField instance with the specified properties.
         See _ATextInput for documentation on kwargs."""
         self._wx_parent = self._resolve(parent)
+        self._enter_callback = on_enter
         super(TextField, self).__init__(parent, *args, multiline=False,
             style=_wx.TE_PROCESS_ENTER, **kwargs)
         # Handle Enter -> OK button event to parent
@@ -210,10 +212,11 @@ class TextField(_ATextInput):
         self._on_enter.subscribe(self._handle_enter)
 
     def _handle_enter(self):
-        """Internal callback. Sends a click event to the OK button of the
-        parent window, if it has one."""
-        ok_btn = self._wx_parent.FindWindowById(_wx.ID_OK)
-        if ok_btn:
+        """Internal callback. Calls on_enter if specified, else sends a click
+        event to the OK button of the parent window, if it has one."""
+        if self._enter_callback:
+            self._enter_callback()
+        elif ok_btn := self._wx_parent.FindWindowById(_wx.ID_OK):
             new_evt = _wx.PyCommandEvent(_wx.EVT_BUTTON.typeId, ok_btn.GetId())
             # Schedule this to run after we've finished handling this event
             _wx.CallAfter(_wx.PostEvent, ok_btn, new_evt)
