@@ -3347,8 +3347,16 @@ class BashNotebook(DnDNotebook):
                     widg.SetSelection(iMods)
             btab.tab_panel.ClosePanel()  ##: note the panel remains in memory
             page = widg.GetPage(iDelete)
-            widg.RemovePage(iDelete)
+            was_selected = iDelete == widg.GetSelection()
+            # Removing the selected page selects another one - wxGTK posts the
+            # page change while the removed page is still in wx's list, so
+            # currentPage would be the removed one (unless it was the last),
+            # wxMSW posts it once the page is gone, wxOSX does not post it
+            with self.on_nb_page_change.pause_subscription(self.OnShowPage):
+                widg.RemovePage(iDelete)
             page.Show(False)
+            if was_selected: # show the page wx selected instead
+                self.currentPage.ShowPanel()
         else:
             # It was disabled, enable it
             insertAt = 0
