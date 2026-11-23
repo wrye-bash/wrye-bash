@@ -3365,6 +3365,9 @@ class BashNotebook(DnDNotebook):
                 insertAt += k_enabled
             if not (pan := btab.tab_panel):
                 btab.tab_panel = pan = btab.panel_class(self)
+            # we hid it above - wxGTK leaves out the tab of a hidden page and
+            # won't select it, wxMSW and wxOSX hide the pages they insert
+            pan.visible = True
             if insertAt > page_count:
                 self.add_page(pan, btab.tab_title)
             else:
