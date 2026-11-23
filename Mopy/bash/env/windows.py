@@ -1074,8 +1074,8 @@ def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str]]:
     InitStatusBar.
 
     :param apps_dir: the absolute Path to Mopy/Apps folder
-    :return: a list of (shortcut, target, arguments) tuples, for the shortcuts
-        whose target exists - msi shortcuts target the shortcut itself."""
+    :return: a list of (shortcut, target, arguments) tuples, missing targets
+        included - msi shortcuts target the shortcut itself."""
     shortcuts = []
     try:
         sh = win32client.Dispatch('WScript.Shell')
@@ -1086,7 +1086,7 @@ def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str]]:
             target, lnk_args = shortcut.TargetPath, shortcut.Arguments
             if target.lower().find(r'installer\{') != -1: # msi: dc0c8de
                 target, lnk_args = lnk, ''
-            elif not (target := _GPath(target)).exists():
+            elif not (target := _GPath(target)): # a shell item, or broken
                 continue
             shortcuts.append((lnk, target, lnk_args))
     except Exception:
