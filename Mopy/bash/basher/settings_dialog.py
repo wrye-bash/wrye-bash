@@ -1525,6 +1525,7 @@ class LaunchersPage(_AFixedPage):
         self._selected_launcher: str | None = None
         # the launchers, with their icons - the items are keyed by uid
         self._launcher_listbox = ImageListBox(self,
+            on_select_none=self._cleanup,
             on_select=self._handle_launcher_selected)
         # Name, path and args
         self._launcher_path = FilePicker(self, hint=_('Path to application'))

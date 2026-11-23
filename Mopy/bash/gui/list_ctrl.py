@@ -490,10 +490,13 @@ class ImageListBox(_AComponent):
 
     Events:
       - on_item_selected(item_key: str): Posted when the user selects an
-        item."""
+        item.
+    on_select_none is called once no item is selected after one was
+    deselected - by the user clicking below the items, for instance."""
     _native_widget: _AutoWidthListCtrl
 
-    def __init__(self, parent, *, image_size=16, on_select=None):
+    def __init__(self, parent, *, image_size=16, on_select=None,
+                 on_select_none=None):
         super().__init__(parent, style=_wx.LC_REPORT | _wx.LC_NO_HEADER |
                                        _wx.LC_SINGLE_SEL)
         self._image_size = image_size
@@ -504,6 +507,12 @@ class ImageListBox(_AComponent):
             lambda event: [self._item_keys[event.GetIndex()]])
         if on_select:
             self.on_item_selected.subscribe(on_select)
+        if on_select_none: # selecting an item deselects the old one first,
+            def _check(native=self._native_widget): # so check once wx is done
+                if native and native.GetFirstSelected() == -1:
+                    on_select_none()
+            self._evt_handler(_wx.EVT_LIST_ITEM_DESELECTED).subscribe(
+                lambda: _wx.CallAfter(_check))
 
     def set_items(self, items):
         """Replace the items with the specified (key, label, image) ones -
