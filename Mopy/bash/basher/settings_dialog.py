@@ -1556,7 +1556,11 @@ class StatusBarPage(_AFixedPage):
                 'hide_ids' if checked else 'unhide_ids': [selected]})
         else: # hidden launchers are not searched for - see app_button_factory
             bass.settings['bash.statusbar.hide'].discard(selected)
-            status_bar.replace_button(selected, launcher.recreate())
+            status_bar.replace_button(selected, new := launcher.recreate())
+            # show the searched path, unless the user edited the hidden one's
+            path_txt = self._launcher_path.text_field
+            if path_txt.text_content == launcher.app_path.s:
+                path_txt.text_content = new.app_path.s
         self._populate_launcher_listbox(keep_selection=True)
 
     def _on_filter(self, filter_key, checked):
