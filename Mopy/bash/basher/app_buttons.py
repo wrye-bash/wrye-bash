@@ -297,7 +297,7 @@ class _JavaButton(AppButton):
 
     @set_cwd
     def launch_app(self, exe_path, exe_args):
-        cli = [self._java.stail, '-jar', exe_path.stail, *exe_args]
+        cli = [self._java.stail, '-jar', exe_path.s, *exe_args]
         # Windows Popen would requote the arguments the user typed
         subprocess.Popen(join_launcher_args(cli) if os_name == 'nt' else cli,
                          executable=self._java.s, close_fds=True)
