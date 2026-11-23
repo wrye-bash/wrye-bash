@@ -316,12 +316,23 @@ def _launcher_icons(exe_path, icon):
     if not (icon_path and icon_path.is_file()):
         icon_path, icon_dex = exe_path, 0 # no icon, or a missing one
     elif icon_path.cext in GuiImage.img_types: # an image, not an exe or dll
-        return [GuiImage.from_path(icon_path, iconSize=s) for s in (
-            16, 24, 32)]
+        return _read_icons(icon_path, None)
     if icon_location := get_app_icon(icon_path, icon_dex): # Windows
-        return [GuiImage.from_path(icon_location, GuiImage.img_types['.ico'],
-                                   s) for s in (16, 24, 32)]
+        return _read_icons(icon_location, GuiImage.img_types['.ico'])
     return ERROR_ICONS
+
+def _read_icons(icon_path, img_type):
+    """Return the icons of icon_path, or the 'x' icon if wx can't read them -
+    they would break the status bar, and the boot."""
+    try:
+        icons = [GuiImage.from_path(icon_path, img_type, s) for s in (
+            16, 24, 32)]
+        for icon in icons: # an ico, exe or dll has an image per size
+            icon._native_widget
+        return icons
+    except Exception:
+        deprint(f'Failed to read the icon {icon_path}', traceback=True)
+        return ERROR_ICONS
 
 def split_icon_location(icon: str) -> tuple[str, int]:
     """Split the icon of a custom launcher - a path, or 'path,index' for the
