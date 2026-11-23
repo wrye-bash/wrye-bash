@@ -12002,7 +12002,6 @@ iScreenShotIndex=0</code></td>
     by right-clicking them and selecting <q>Hide</q>, or on the
     <a href="#settings-appearance-status-bar">Status Bar page</a> of the
     Settings menu.
-<p>You can hide some of the toggle buttons using the <code>bShowTes4...</code> options in the <code>Tool Options</code> in the <q>bash.ini</q>.
 <p>To unhide a launcher, check <q>Hidden</q> on the Status Bar page to list the
     hidden ones, select it and uncheck <q>Hide on the status bar</q>.
 
@@ -12018,12 +12017,14 @@ iScreenShotIndex=0</code></td>
     registers one - off Windows, or if neither has one, the <q>x</q> icon,
     which it also gets if its file is missing, icon or not. The launchers that
     come with Wrye Bash can be changed there too, and reset to their defaults.
-<p>Wrye Bash used to read the tool paths in the <code>Tool Options</code> of
-    the <q>bash.ini</q> and the shortcuts in the <code>Mopy\Apps</code> folder.
-    The first time it runs for a game, it imports the paths that exist and the
-    shortcuts as launchers, and lists them in a warning - from then on it reads
-    neither, so change the launchers on the Status Bar page instead. The
-    comments of the shortcuts, the tooltips of their buttons, are not imported.
+<p>Wrye Bash used to read the tool paths and the
+    <code>bShow*ToolLaunchers</code> switches in the <code>Tool Options</code>
+    of the <q>bash.ini</q>, and the shortcuts in the <code>Mopy\Apps</code>
+    folder. The first time it runs for a game, it imports the paths that exist
+    and the shortcuts as launchers - a switch set to False hides its group of
+    launchers - and lists them in a warning. From then on it reads neither, so
+    change the launchers on the Status Bar page instead. The comments of the
+    shortcuts, the tooltips of their buttons, are not imported.
 
 <h2 id="settings">Settings Menu <a class="back2top" href="#contents">Back to top</a></h2>
 <figure class="slideshow">
@@ -12438,7 +12439,9 @@ iScreenShotIndex=0</code></td>
         </tr>
         <tr>
             <td>Hide on the status bar</td>
-            <td>Hide or unhide the selected button.</td>
+            <td>Hide or unhide the selected button. Hidden launchers are not
+                searched for, so they are never listed as not found -
+                unhiding one searches for it.</td>
         </tr>
         <tr>
             <td>Save</td>
