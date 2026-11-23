@@ -91,7 +91,7 @@
                         <li><a href="#launchers-utils">Game-Specific Utilities</a>
                         <li><a href="#launchers-apps">Other Applications</a>
                         <li><a href="#launchers-features">Wrye Bash Feature Launchers</a>
-                        <li><a href="#manually-add">Manually adding tools to the Launcher Bar</a>
+                        <li><a href="#manually-add">Adding tools to the Launcher Bar</a>
                     </ol>
                 <li class="list"><a href="#international">Internationalisation</a></li>
                 <li class="list"><a href="#trouble">Troubleshooting</a>
@@ -2086,6 +2086,9 @@ from other packages previously overridden by the uninstalled package's
         bottom of its main window.</figcaption>
 </figure>
 <p>At the bottom left of Bash's main window you'll find launch buttons for your game and other applications if they're installed. You'll also find a few toggle buttons and some Wrye Bash feature buttons. Each of the application buttons will be present if the corresponding application is present in the game install directory, or in their default install location if the application is not game-specific.
+    You can change the paths and command line arguments of most of them, and
+    add launchers of your own, on the Launchers page of the
+    <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings menu</a>.
 <p>Clicking an application's icon will launch it, and clicking a toggle button will change the state of the toggle. Clicking a Wrye Bash feature button will open that feature's window.</p>
 <h3 id="launchers-toggles">Toggle Buttons <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
@@ -2226,7 +2229,7 @@ from other packages previously overridden by the uninstalled package's
 </ul>
 <p>Tes4Gecko &amp; Oblivion Book Creator will be available if the windows path variable <code>JAVA_HOME</code> points to a valid
    Java install (or the javaw.exe is present in Windows\System32) and their .jar file is present in Oblivion install directory
-   or for OBC in the data directory (you can override those default paths in bash.ini).</p>
+   or for OBC in the data directory (you can change those paths on the Launchers page of the Settings menu).</p>
 <p>The LOOT and BOSS launchers have some options (for BOSS, only if BOSS v2 is
     installed):</p>
 
@@ -2460,11 +2463,14 @@ from other packages previously overridden by the uninstalled package's
     </tbody>
 </table>
 
-<h3 id="manually-add">Manually adding tools to the Launcher Bar <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Find the executable of the tool you want to add and Right Click on it. Choose "create shortcut".
-<p>Cut (ctrl-x) the resulting icon and paste it into the Mopy \ Apps \ folder. You can also take a shortcut by opening two Explorer windows
-    and alt-drag the executable you want to add to the Mopy\Apps folder.
-<p>When you next run Wrye Bash the icon will be in the Launcher Bar, and you can Drag and drop the new icon to a desired position
+<h3 id="manually-add">Adding tools to the Launcher Bar <a class="back2top" href="#contents">Back to top</a></h3>
+<p>Open the Launchers page of the Settings menu, click <q>New</q>, enter a name
+    for the launcher and the path of the application, and its command line
+    arguments if it needs any, then click <q>Save</q>. See
+    <a href="Wrye%20Bash%20Advanced%20Readme.html#launchers-custom">Custom Launchers</a>
+    for more.
+<p>The new launcher is added at the end of the Launcher Bar - drag and drop it
+    to the position you want.
 <p>Be careful not to use up all the available space and prevent tooltip messages appearing next to the Launcher Bar</p>
 
 <h2 id="international">Internationalisation <a class="back2top" href="#contents">Back to top</a></h2>

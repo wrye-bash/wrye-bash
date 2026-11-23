@@ -11998,26 +11998,27 @@ iScreenShotIndex=0</code></td>
     <figcaption style="padding-top: 100px">The Hide option in the
         right-click menus for various launchers.</figcaption>
 </figure>
-<p>You can hide specific launcher icons, preventing them from being displayed, by right-clicking them and selecting <q>Hide...</q> or by inserting a semicolon before their path in the <q>bash.ini</q>.
-<ul><li>For example, <code>sPhotoshopPath=;C:\Program Files\Adobe\Photoshop 7.0\Photoshop.exe</code>.</ul>
+<p>You can hide specific launcher icons, preventing them from being displayed, by right-clicking them and selecting <q>Hide</q>.
 <p>You can hide some of the toggle buttons using the <code>bShowTes4...</code> options in the <code>Tool Options</code> in the <q>bash.ini</q>.
 <p>You can unhide launchers hidden through the right-click option using the Settings menu. See the <a href="#settings">Settings Menu</a> for more information.
 
 
 <h3 id="launchers-custom">Custom Launchers <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Custom launcher buttons may be added by putting a shortcut to the application you wish to have a launcher for in the <code>Mopy\Apps</code> directory. Wrye Bash will then use the following information from the shortcut:
-<ul>
-    <li>Icon
-    <li>Working directory
-    <li>Command line arguments
-    <li>Comments
-</ul>
-<p>If you want to have a custom icon for a launcher, place a PNG image with the same name as the shortcut, appending the icon size, in the same folder. For example:
-<ul>
-    <li>Notepadpp.lnk
-    <li>Notepadpp24.png
-</ul>
-<p><strong>Note:</strong> 24x24 icons taken from shortcuts do not work well, so if you are using this size, be sure to include a custom icon. Icon size displayed can be adjusted in the <q>bash.ini</q> or the <a href="#settings">Settings</a> menu.
+<p>Custom launcher buttons may be added on the Launchers page of the
+    <a href="#settings">Settings menu</a>: click <q>New</q>, enter a name and
+    the path of the file to launch - an exe, a jar, or any other file or
+    folder, which is opened with its default application - and its command line
+    arguments, if any, then click <q>Save</q>. A custom launcher gets the icon
+    of its exe, or of its file type if Windows registers one - off Windows, or
+    if neither has one, the <q>x</q> icon, which it also gets if its file is
+    missing. The launchers that come with Wrye Bash can be changed there too,
+    and reset to their defaults.
+<p>Wrye Bash used to read the tool paths in the <code>Tool Options</code> of
+    the <q>bash.ini</q> and the shortcuts in the <code>Mopy\Apps</code> folder.
+    The first time it runs for a game, it imports the paths that exist and the
+    shortcuts as launchers, and lists them in a warning - from then on it reads
+    neither, so change the launchers on the Launchers page instead. The
+    comments of the shortcuts, the tooltips of their buttons, are not imported.
 
 <h2 id="settings">Settings Menu <a class="back2top" href="#contents">Back to top</a></h2>
 <figure class="slideshow">
@@ -12350,9 +12351,9 @@ iScreenShotIndex=0</code></td>
                 detects as being installed. Selecting a game here and
                 <a href="#settings-apply">applying</a> will relaunch this Wrye
                 Bash installation with the <code>-o</code> argument. That means
-                the <code>bash.ini</code> settings and status bar launchers
-                from this installation will apply to the newly selected game as
-                well, which might not be what you expect.</td>
+                the <code>bash.ini</code> settings from this installation will
+                apply to the newly selected game as well, which might not be
+                what you expect.</td>
         </tr>
         <tr>
             <td>Plugin Encoding</td>
