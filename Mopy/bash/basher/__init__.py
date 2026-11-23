@@ -2933,8 +2933,13 @@ class InstallersPanel(BashTab):
                   focus_list=False, **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
-        if (not settings[u'bash.installers.enabled'] or self.refreshing
-                or self._user_cancelled):
+        if not settings['bash.installers.enabled']:
+            self._user_cancelled = False
+            # nothing to refresh, but the status bar and menus are ours now
+            Link.Frame.set_status_info(self.sb_count_str(), 2, show_panel=True)
+            self.uiList.setup_global_menu()
+            return
+        if self.refreshing or self._user_cancelled:
             self._user_cancelled = False
             return
         try:
