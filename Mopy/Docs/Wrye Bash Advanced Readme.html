@@ -113,10 +113,10 @@
                     <ol class="items">
                         <li><a href="#settings-appearance-colors">Appearance: Colors</a></li>
                         <li><a href="#settings-appearance-language">Appearance: Language</a></li>
-                        <li><a href="#settings-appearance-status-bar">Appearance: Status Bar</a></li>
                         <li><a href="#settings-backups">Backups</a></li>
                         <li><a href="#settings-confirmations">Confirmations</a></li>
                         <li><a href="#settings-general">General</a></li>
+                        <li><a href="#settings-appearance-status-bar">Status Bar</a></li>
                         <li><a href="#settings-trusted-binaries">Trusted Binaries</a></li>
                     </ol>
                 </li>
@@ -11998,26 +11998,31 @@ iScreenShotIndex=0</code></td>
     <figcaption style="padding-top: 100px">The Hide option in the
         right-click menus for various launchers.</figcaption>
 </figure>
-<p>You can hide specific launcher icons, preventing them from being displayed, by right-clicking them and selecting <q>Hide</q>.
+<p>You can hide specific launcher icons, preventing them from being displayed,
+    by right-clicking them and selecting <q>Hide</q>, or on the
+    <a href="#settings-appearance-status-bar">Status Bar page</a> of the
+    Settings menu.
 <p>You can hide some of the toggle buttons using the <code>bShowTes4...</code> options in the <code>Tool Options</code> in the <q>bash.ini</q>.
-<p>You can unhide launchers hidden through the right-click option using the Settings menu. See the <a href="#settings">Settings Menu</a> for more information.
+<p>To unhide a launcher, check <q>Hidden</q> on the Status Bar page to list the
+    hidden ones, select it and uncheck <q>Hide on the status bar</q>.
 
 
 <h3 id="launchers-custom">Custom Launchers <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Custom launcher buttons may be added on the Launchers page of the
-    <a href="#settings">Settings menu</a>: click <q>New</q>, enter a name and
-    the path of the file to launch - an exe, a jar, or any other file or
-    folder, which is opened with its default application - and its command line
-    arguments, if any, then click <q>Save</q>. A custom launcher gets the icon
-    of its exe, or of its file type if Windows registers one - off Windows, or
-    if neither has one, the <q>x</q> icon, which it also gets if its file is
-    missing. The launchers that come with Wrye Bash can be changed there too,
-    and reset to their defaults.
+<p>Custom launcher buttons may be added on the
+    <a href="#settings-appearance-status-bar">Status Bar page</a> of the
+    Settings menu: click <q>New</q>, enter a name and the path of the file to
+    launch - an exe, a jar, or any other file or folder, which is opened with
+    its default application - and its command line arguments, if any, then
+    click <q>Save</q>. A custom launcher gets the icon of its exe, or of its
+    file type if Windows registers one - off Windows, or if neither has one,
+    the <q>x</q> icon, which it also gets if its file is missing. The launchers
+    that come with Wrye Bash can be changed there too, and reset to their
+    defaults.
 <p>Wrye Bash used to read the tool paths in the <code>Tool Options</code> of
     the <q>bash.ini</q> and the shortcuts in the <code>Mopy\Apps</code> folder.
     The first time it runs for a game, it imports the paths that exist and the
     shortcuts as launchers, and lists them in a warning - from then on it reads
-    neither, so change the launchers on the Launchers page instead. The
+    neither, so change the launchers on the Status Bar page instead. The
     comments of the shortcuts, the tooltips of their buttons, are not imported.
 
 <h2 id="settings">Settings Menu <a class="back2top" href="#contents">Back to top</a></h2>
@@ -12026,10 +12031,10 @@ iScreenShotIndex=0</code></td>
     <img alt="" src="../bash/images/readme/settings-colors.png">
     <img alt="" src="../bash/images/readme/settings-language.png">
     <img alt="" src="../bash/images/readme/settings-misc.png">
-    <img alt="" src="../bash/images/readme/settings-status-bar.png">
     <img alt="" src="../bash/images/readme/settings-backups.png">
     <img alt="" src="../bash/images/readme/settings-confirmations.png">
     <img alt="" src="../bash/images/readme/settings-general.png">
+    <img alt="" src="../bash/images/readme/settings-status-bar.png">
     <img alt="" src="../bash/images/readme/settings-trusted-binaries.png">
     <figcaption style="padding-top: 458px;">Wrye Bash's Settings menu.</figcaption>
 </figure>
@@ -12172,45 +12177,6 @@ iScreenShotIndex=0</code></td>
                 section) with white ones. Useful if you are using an OS theme
                 that makes those icons hard to see. Needs a restart to take
                 effect.</td>
-        </tr>
-    </tbody>
-</table>
-
-<h3 id="settings-appearance-status-bar">Appearance: Status Bar <a class="back2top" href="#contents">Back to top</a></h3>
-
-<figure>
-<img alt="" src="../bash/images/readme/settings-status-bar.png">
-<figcaption>The Status Bar Page.</figcaption>
-</figure>
-
-<p>The status bar page can be used to tweak the status bar at the bottom of the
-    screen in various ways.</p>
-
-<table>
-    <thead>
-        <tr>
-            <th colspan="2">Status Bar Options</th>
-        </tr>
-        <tr>
-            <th>Option</th>
-            <th>Function</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>Show App Version</td>
-            <td>If enabled, show the versions of applications in their
-                launchers' tooltips on the status bar.</td>
-        </tr>
-        <tr>
-            <td>Icon Size</td>
-            <td>Choose between 16x16, 24x24, or 32x32 status bar icons.</td>
-        </tr>
-        <tr>
-            <td>Visible/Hidden Buttons</td>
-            <td>Manage which buttons will be shown on the status bar. To change
-                a button's state, select it and use the left/right arrows to
-                move it between the two lists.</td>
         </tr>
     </tbody>
 </table>
@@ -12406,6 +12372,84 @@ iScreenShotIndex=0</code></td>
                 restore them when you come back. This is convenient, but may
                 make Wrye Bash's startup slower if you have a lot of items on
                 the last tab you were on and scrolled far down.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3 id="settings-appearance-status-bar">Status Bar <a class="back2top" href="#contents">Back to top</a></h3>
+
+<figure>
+<img alt="" src="../bash/images/readme/settings-status-bar.png">
+<figcaption>The Status Bar Page.</figcaption>
+</figure>
+
+<p>The status bar page lists the buttons of the status bar at the bottom of the
+    screen, with their icons - the hidden ones in italics, and the launchers
+    whose application was not found greyed out. Select a launcher to edit it in
+    the fields below the list: the launchers that come with Wrye Bash keep
+    their name, and the game's own launcher can't be edited. The launcher edits
+    apply at once, while the options at the bottom wait for <q>OK</q> or
+    <q>Apply</q>.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th colspan="2">Status Bar Options</th>
+        </tr>
+        <tr>
+            <th>Option</th>
+            <th>Function</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Show</td>
+            <td>Choose which buttons to list: the <q>Predefined</q> launchers
+                that come with Wrye Bash, the <q>Custom</q> ones you added,
+                the <q>Other Buttons</q> that can be hidden, the
+                <q>Hidden</q> ones, and the launchers whose application was
+                <q>Not Found</q> - check it to set the path of a tool Wrye
+                Bash did not find.</td>
+        </tr>
+        <tr>
+            <td>Name</td>
+            <td>The name of a custom launcher.</td>
+        </tr>
+        <tr>
+            <td>Application path</td>
+            <td>The file to launch - an exe, a jar, or any other file or
+                folder, which is opened with its default application.</td>
+        </tr>
+        <tr>
+            <td>Command line arguments</td>
+            <td>The arguments to launch the application with.</td>
+        </tr>
+        <tr>
+            <td>Hide on the status bar</td>
+            <td>Hide or unhide the selected button.</td>
+        </tr>
+        <tr>
+            <td>Save</td>
+            <td>Save the launcher in the fields - a new one if none is
+                selected.</td>
+        </tr>
+        <tr>
+            <td>Remove/Reset</td>
+            <td>Remove the selected custom launcher, or reset the selected
+                predefined one to its defaults.</td>
+        </tr>
+        <tr>
+            <td>New</td>
+            <td>Clear the fields, to add a new launcher.</td>
+        </tr>
+        <tr>
+            <td>Icon Size</td>
+            <td>Choose between 16x16, 24x24, or 32x32 status bar icons.</td>
+        </tr>
+        <tr>
+            <td>Show App Version</td>
+            <td>If enabled, show the versions of applications in their
+                launchers' tooltips on the status bar.</td>
         </tr>
     </tbody>
 </table>
