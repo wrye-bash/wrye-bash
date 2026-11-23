@@ -12012,12 +12012,12 @@ iScreenShotIndex=0</code></td>
     <a href="#settings-appearance-status-bar">Status Bar page</a> of the
     Settings menu: click <q>New</q>, enter a name and the path of the file to
     launch - an exe, a jar, or any other file or folder, which is opened with
-    its default application - and its command line arguments, if any, then
-    click <q>Save</q>. A custom launcher gets the icon of its exe, or of its
-    file type if Windows registers one - off Windows, or if neither has one,
-    the <q>x</q> icon, which it also gets if its file is missing. The launchers
-    that come with Wrye Bash can be changed there too, and reset to their
-    defaults.
+    its default application - and its command line arguments and the folder to
+    start it in, if any, then click <q>Save</q>. A custom launcher gets the
+    icon of its exe, or of its file type if Windows registers one - off
+    Windows, or if neither has one, the <q>x</q> icon, which it also gets if
+    its file is missing. The launchers that come with Wrye Bash can be changed
+    there too, and reset to their defaults.
 <p>Wrye Bash used to read the tool paths in the <code>Tool Options</code> of
     the <q>bash.ini</q> and the shortcuts in the <code>Mopy\Apps</code> folder.
     The first time it runs for a game, it imports the paths that exist and the
@@ -12423,6 +12423,11 @@ iScreenShotIndex=0</code></td>
         <tr>
             <td>Command line arguments</td>
             <td>The arguments to launch the application with.</td>
+        </tr>
+        <tr>
+            <td>Start in</td>
+            <td>The folder to start the application in - the folder of the
+                launched file if empty.</td>
         </tr>
         <tr>
             <td>Hide on the status bar</td>
