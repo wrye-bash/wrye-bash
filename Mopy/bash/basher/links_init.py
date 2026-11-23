@@ -150,8 +150,13 @@ def InitStatusBar():
         'ShowAudioToolLaunchers']) for at in audio_tools.items())
     all_links.extend(_tool_args(*mt) for mt in misc_tools.items())
     #--Custom Launchers - the uids of the launcher settings that are not
-    # predefined (the ones with no path are leftovers of dropped ones)
-    predefined = {li.uid for li in all_links}
+    # predefined (the ones with no path are leftovers of dropped ones) -
+    # the final couple of buttons go last, but are predefined too
+    final_couple = [DocBrowserButton('DocBrowser'),
+        PluginCheckerButton('ModChecker'),
+        SettingsButton('Settings', canHide=False),
+        HelpButton('Help', canHide=False), RestartButton('Restart')]
+    predefined = {li.uid for li in chain(all_links, final_couple)}
     if import_launchers: ##:(734:570) the Apps shortcuts become custom ones
         order = bass.settings['bash.statusbar.order']
         for lnk, target, *lnk_data in init_app_links(
@@ -168,12 +173,7 @@ def InitStatusBar():
     all_links.extend(AppButton.app_button_factory(uid=launcher_uid) for
         launcher_uid, launcher_set in launchers.items() if launcher_uid not in
         predefined and 'path' in launcher_set)
-    #--Final couple
-    all_links.append(DocBrowserButton('DocBrowser'))
-    all_links.append(PluginCheckerButton('ModChecker'))
-    all_links.append(SettingsButton('Settings', canHide=False))
-    all_links.append(HelpButton('Help', canHide=False))
-    all_links.append(RestartButton('Restart'))
+    all_links.extend(final_couple)
     BashStatusBar.all_sb_links = {li.uid: li for li in all_links}
 
 #------------------------------------------------------------------------------
