@@ -3335,16 +3335,7 @@ class BashNotebook(DnDNotebook):
         if bass.settings['bash.tabs.order'][tab_key]:
             # It was enabled, disable it.
             pageTitle = {widg.GetPageText(i): i for i in range(page_count)}
-            iMods = pageTitle[TabInfo.MODS.tab_title]  # should always exist!
-            iInstallers = pageTitle.get(TabInfo.INSTALLERS.tab_title)
             iDelete = pageTitle[btab.tab_title]
-            if iDelete == widg.GetSelection():
-                # We're deleting the current page...
-                if ((iDelete == 0 and iInstallers == 1) or (
-                        iDelete - 1 == iInstallers)):
-                    # The auto-page change will change to the 'Installers' tab.
-                    # Change to the 'Mods' tab instead.
-                    widg.SetSelection(iMods)
             btab.tab_panel.ClosePanel()  ##: note the panel remains in memory
             page = widg.GetPage(iDelete)
             was_selected = iDelete == widg.GetSelection()
@@ -3354,6 +3345,14 @@ class BashNotebook(DnDNotebook):
             # wxMSW posts it once the page is gone, wxOSX does not post it
             with self.on_nb_page_change.pause_subscription(self.OnShowPage):
                 widg.RemovePage(iDelete)
+                # wxMSW and wxGTK select the next page (the previous one if
+                # the removed was the last), wxOSX the previous one (the next
+                # one if it was the first) - if it's the 'Installers' tab,
+                # change to the 'Mods' tab instead, not to refresh Installers
+                if was_selected and (self.currentPage is
+                                     TabInfo.INSTALLERS.tab_panel):
+                    widg.SetSelection(widg.FindPage(
+                        self._resolve(TabInfo.MODS.tab_panel)))
             page.Show(False)
             if was_selected: # show the page wx selected instead
                 self.currentPage.ShowPanel()
