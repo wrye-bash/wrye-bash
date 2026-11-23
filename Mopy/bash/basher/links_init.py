@@ -85,8 +85,8 @@ def InitStatusBar():
         app_launcher, app_name, path_kwargs, *cli_args = app_path_data
         uid = kwargs.setdefault('uid', app_key)
         if import_launchers and app_key and ( ##:(734:570)
-                ini_path := bass.get_path_from_ini(app_key.lower())):
-            # whether it exists or not, as find_launcher used to
+                ini_path := bass.get_path_from_ini(app_key.lower())) and (
+                ini_path.exists()): # missing ones are searched for instead
             launchers[uid] = {'path': ini_path.s}
             imported_launchers.append(f's{app_key}={ini_path}')
         if app_key in {'Steam', 'LOOT'}:
