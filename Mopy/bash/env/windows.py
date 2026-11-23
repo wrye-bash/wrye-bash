@@ -1083,7 +1083,9 @@ def init_app_links(apps_dir) -> list[tuple[_Path, _Path, str]]:
             if lnk.fn_ext != '.lnk': continue
             lnk = apps_dir.join(lnk)
             shortcut = sh.CreateShortCut(lnk.s)
-            target, lnk_args = shortcut.TargetPath, shortcut.Arguments
+            target = shortcut.TargetPath
+            # the shell expands them, Popen and os.startfile won't
+            lnk_args = win32api.ExpandEnvironmentStrings(shortcut.Arguments)
             if target.lower().find(r'installer\{') != -1: # msi: dc0c8de
                 target, lnk_args = lnk, ''
             elif not (target := _GPath(target)): # a shell item, or broken
