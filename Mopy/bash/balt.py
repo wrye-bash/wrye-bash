@@ -2024,16 +2024,13 @@ class BashStatusBar(DnDStatusBar):
         native_button = mouseEvent.event_object_
         for i, button_link in enumerate(self._visible_buttons.values()):
             if button_link._native_widget == native_button:
-                x = mouseEvent.evt_pos[0]
-                # position is 0 at the beginning of the button's _icon_
-                # negative beyond that (on the left) and positive after - in
-                # pixels, while icon_size is in DIPs
-                border = self._native_widget.FromDIP(4)
-                if x < -border:
-                    return max(i - 1, 0), button_link
-                elif x > self._native_widget.FromDIP(self.icon_size) - border:
-                    return min(i + 1, len(self._visible_buttons) - 1), button_link
-                return i, button_link
+                # the slot under the mouse, maybe slots away in a fast drag -
+                # evt_pos is 0 at the start of the button's icon, in pixels,
+                # and icon_size, in DIPs, is the icon and 4 DIPs on each side
+                x = mouseEvent.evt_pos[0] + self._native_widget.FromDIP(4)
+                i += x // self._native_widget.FromDIP(self.icon_size)
+                return min(max(i, 0), len(self._visible_buttons) - 1), \
+                    button_link
         return wx.NOT_FOUND, None
 
     def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
