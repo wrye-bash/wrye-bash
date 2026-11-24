@@ -192,7 +192,7 @@ class IcoFromPng(GuiImage):
         native.CopyFromBitmap(native_bmp)
         return native
 
-class _BmpFromIcoPath(_BitmapBundle): ##: .ico only in InitStatusBar (Custom Apps)
+class _BmpFromIcoPath(_BitmapBundle):
     """An .ico, or the icon of an exe or dll ('path;index')."""
 
     def _bitmaps(self):
