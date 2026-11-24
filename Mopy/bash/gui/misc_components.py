@@ -591,7 +591,12 @@ class GlobalMenu(_AEvtHandler):
             populate_cb(wx_menu)
 
     def _handle_menu_closed(self, wx_menu):
-        """Internal callback, needed to correctly handle help text."""
+        """Internal callback, needed to correctly handle help text. A menu
+        that closes takes the help of its items along, a context menu too -
+        wxMSW sends no highlight event for that. Not a submenu, the item
+        hovered next in its parent may be showing its help already."""
+        if wx_menu is None or not wx_menu.GetParent():
+            self._frame.set_status_info('')
         if isinstance(wx_menu, self._GMCategory):
             Links.Popup = None
 
