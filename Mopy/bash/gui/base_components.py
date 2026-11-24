@@ -497,14 +497,11 @@ class WithMouseEvents(_AComponent):
         - on_mouse_left_dclick(hit_test: tuple[int]): left mouse doubleclick.
         - on_mouse_left_down(wrapped_evt: _WrapMouseEvt, lb_dex: int): left
         mouse click.
-        - on_mouse_right_up(hit_test: tuple[int]): right mouse button released.
-        - on_mouse_right_down(position: tuple[int]): right mouse button click.
         - on_mouse_middle_up(): middle mouse button released.
       - on_mouse_motion(wrapped_evt: _WrapMouseEvt, hit_test: int): mouse moved
       - on_mouse_leaving(): mouse is leaving the window
     """
     bind_lclick_double = bind_lclick_up = bind_lclick_down = False
-    bind_rclick_up = bind_rclick_down = False
     bind_motion = bind_mouse_leaving = False
     bind_middle_up = False
 
@@ -546,12 +543,6 @@ class WithMouseEvents(_AComponent):
         if self.__class__.bind_lclick_up:
             self.on_mouse_left_up = self._evt_handler(_wx.EVT_LEFT_UP,
                 lambda event: [self._WrapMouseEvt(event)])
-        if self.__class__.bind_rclick_up:
-            self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
-                                                       lb_hit_test)
-        if self.__class__.bind_rclick_down:
-            self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
-                lambda event: [event.GetPosition()])
         if self.__class__.bind_motion:
             self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
                 lambda event: [self._WrapMouseEvt(event),

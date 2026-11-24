@@ -1378,7 +1378,7 @@ class ModDetails(_ModsSavesDetails):
             on_click=self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
-        self.gTags.on_mouse_right_up.subscribe(self._popup_misc_tags)
+        self.gTags.on_context.subscribe(self._popup_misc_tags)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(items=[Label(top, _('File:')), Stretch(), self._version]),
@@ -2570,7 +2570,7 @@ class InstallersDetails(_SashDetailsPanel):
         #--Sub-Installers
         self.gSubList = CheckListBox(self.sp_panel, isExtended=True)
         self.gSubList.on_box_checked.subscribe(self._check_subitem)
-        self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
+        self.gSubList.on_context.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
         self.fomod_btn = RadioButton(self.sp_panel, 'FOMOD')
         self.fomod_btn.tooltip = _(u'Disable the regular BAIN sub-packages '
@@ -2589,7 +2589,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
             self._on_plugin_filter_dclick)
-        self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
+        self.gEspmList.on_context.subscribe(self._selection_menu)
         #--Comments
         self.gComments = TextArea(commentsPanel)
         #--Layout

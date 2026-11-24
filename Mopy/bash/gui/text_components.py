@@ -54,7 +54,6 @@ class _ATextInput(_AComponent):
     Events:
      - on_focus_lost(): Posted when this text input goes out of focus. Used in
        WB to auto-save edits.
-     - on_right_clicked(): Posted when this text input is right-clicked.
      - on_text_changed(new_text: str): Posted when the text in this text
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
@@ -104,7 +103,6 @@ class _ATextInput(_AComponent):
         # Internal use only - used to implement auto_tooltip below
         self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
         self.on_focus_lost = self._evt_handler(_wx.EVT_KILL_FOCUS)
-        self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
         self.on_text_changed = self._evt_handler(_wx.EVT_TEXT,
                                             lambda event: [event.GetString()])
         # Need to delay this until now since it uses the events from above

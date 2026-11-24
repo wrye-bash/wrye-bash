@@ -113,8 +113,12 @@ class ListBox(WithMouseEvents):
       - on_list_box(lb_dex: int, item_text: str): Posted when user selects
       an item from list. The default arg processor extracts the index of the
       event and the list item label
+      - on_context(lb_dex: int): Posted when the context menu of the list is
+      asked for - with the index of the item under the mouse or, when asked
+      for from the keyboard, of the first selected item (-1 if there is
+      none). Never skipped: show the menu.
       - Mouse events - see gui.base_components.WithMouseEvents"""
-    bind_motion = bind_rclick_down = bind_rclick_up = True
+    bind_motion = True
     _native_widget: _wx.ListBox
 
     def __init__(self, parent, choices: list[str] | None = None, isSingle=True,
@@ -131,6 +135,16 @@ class ListBox(WithMouseEvents):
             self.on_list_box = self._evt_handler(_wx.EVT_LISTBOX,
                 lambda event: [event.GetSelection(), event.GetString()])
             self.on_list_box.subscribe(onSelect)
+        self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
+                                            self._context_index, skip=False)
+
+    def _context_index(self, event):
+        mouse_pos = event.GetPosition() # on the screen
+        if mouse_pos == _wx.DefaultPosition: # asked for from the keyboard
+            lb_selections = self._native_widget.GetSelections()
+            return [lb_selections[0] if lb_selections else _wx.NOT_FOUND]
+        return [self._native_widget.HitTest(
+            self._native_widget.ScreenToClient(mouse_pos))]
 
     def lb_select_index(self, lb_selection_dex: int | None):
         self._native_widget.SetSelection( # clear selection if dex is None
@@ -213,9 +227,7 @@ class CheckListBox(ListBox, WithCharEvents):
     Events:
       - on_box_checked(index: int): Posted when user checks an item from the
         list. The default arg processor extracts the index of the event.
-      - on_context(lb_instance: CheckListBox): Posted when this CheckListBox is
-        right-clicked.
-      - Mouse events - see gui.base_components.WithMouseEvents.
+      - on_context and the mouse events - see ListBox.
       - Key events - see gui.base_components.WithCharEvents."""
     # type _native_widget: wx.CheckListBox
     bind_mouse_leaving = bind_lclick_double = True
@@ -229,8 +241,6 @@ class CheckListBox(ListBox, WithCharEvents):
             isExtended, onSelect)
         self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
             lambda event: [event.GetSelection()])
-        self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
-                                            lambda event: [self])
 
     def lb_check_at_index(self, lb_selection_dex: int, do_check: bool):
         self._native_widget.Check(lb_selection_dex, do_check)

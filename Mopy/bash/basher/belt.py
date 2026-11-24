@@ -179,7 +179,7 @@ class PageSelect(PageInstaller):
         self._page_links = Links()
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
-            self.listOptions.on_mouse_right_up.subscribe(self._on_right_click)
+            self.listOptions.on_context.subscribe(self._on_right_click)
             self._page_links.append_link(_Page_SelectAll(self.listOptions))
             self._page_links.append_link(_Page_DeselectAll(self.listOptions))
             self._page_links.append_link(_Page_ToggleAll(self.listOptions))
