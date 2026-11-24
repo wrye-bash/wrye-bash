@@ -245,11 +245,7 @@ class SearchBar(TextField):
         def _update_clear_btn_visibility(new_text: str):
             self._native_widget.ShowCancelButton(bool(new_text))
         self.on_text_changed.subscribe(_update_clear_btn_visibility)
-        # And implement the button's actual behavior when clicked: clear the
-        # search bar (which will then hide the button since this posts the
-        # on_text_changed event)
-        on_cancel = self._evt_handler(_wx.EVT_SEARCHCTRL_CANCEL_BTN)
-        on_cancel.subscribe(self.clear_search_bar)
+        # wx clears the text when that button is clicked, which hides it
 
     def clear_search_bar(self, keep_str=''): # use sparingly
         """Clear us if we are not contained in keep_str. Fires wx.EVT_TEXT so

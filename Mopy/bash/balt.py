@@ -423,7 +423,12 @@ class Progress(bolt.Progress):
 _depth = 0
 _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
-    """Decorator to temporarily unbind RefreshData Link.Frame callback."""
+    """Decorator to temporarily unbind RefreshData Link.Frame callback, so
+    that the frame being activated again, as a dialog func showed closes,
+    does not refresh the data. On wxMSW that activation comes while the
+    dialog closes, inside func. On wxGTK the main loop delivers it later,
+    with RefreshData bound again - there the data is refreshed once, after
+    func."""
     @wraps(func)
     def _conversation_wrapper(*args, **kwargs):
         global _depth
@@ -833,9 +838,11 @@ class UIList(PanelWin):
         if width < self._min_column_width:
             width = self._min_column_width
             self.__gList.lc_set_column_width(evt_col, self._min_column_width)
-            # if we do not veto the column will be resized anyway!
             self.__gList.resize_last_col() # resize last column to fill
             self.colWidths[colName] = width
+            # The veto is for wxMSW, that hands it to the native list -
+            # without it the column was resized anyway. wxGTK has resized it
+            # by now and ignores the veto, there the width set above holds
             return EventResult.CANCEL
         self.colWidths[colName] = width
 
@@ -1916,7 +1923,6 @@ class INIListCtrl(ListCtrl):
                 self._contents.ScrollLines(top_scroll + iniLine)
             finally:
                 self._contents.Thaw()
-        event.Skip()
 
     def fit_column_to_header(self, column):
         self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
@@ -2042,9 +2048,8 @@ class BashStatusBar(DnDStatusBar):
         if self.dragging != wx.NOT_FOUND:
             moved = self.moved
             self._reset_drag()
-            if moved:
-                return EventResult.FINISH
-            button_link.sb_click()
+            if not moved:
+                button_link.sb_click()
 
     def _reset_drag(self, set_cursor=True):
         self.dragging = wx.NOT_FOUND

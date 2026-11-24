@@ -482,7 +482,6 @@ class MasterList(_ModsUIList):
         if sel_curr_name not in bosh.modInfos:
             return # Master that is not installed was clicked
         balt.Link.Frame.notebook.jump_to('Mods', sel_curr_name)
-        return EventResult.FINISH
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -717,7 +716,6 @@ class INIList(UIList):
         tweak_clicked = self._get_info_clicked(lb_dex_and_flags)
         if tweak_clicked and not tweak_clicked.is_default_tweak:
             self.OpenSelected(selected=[tweak_clicked.fn_key])
-        return EventResult.FINISH
 
     def _handle_key_down(self, wrapped_evt):
         kcode = wrapped_evt.key_code
@@ -2832,7 +2830,6 @@ class InstallersDetails(_SashDetailsPanel):
         selected_name = self.get_espm(selected_index)
         if selected_name not in bosh.modInfos: return
         balt.Link.Frame.notebook.jump_to('Mods', selected_name)
-        return EventResult.FINISH
 
     def set_subpackage_checkmarks(self, checked):
         """Checks or unchecks all sub-package checkmarks and propagates that
@@ -3074,7 +3071,6 @@ class ScreensList(UIList):
         hitItem = self._getItemClicked(lb_dex_and_flags)
         if hitItem:
             self.OpenSelected(selected=[hitItem])
-        return EventResult.FINISH
 
     def _info_to_name(self, selected, *args):
         root, numStr, num, digits = args

@@ -368,10 +368,11 @@ class Splitter(_AComponent):
         panes = first_pane or PanelWin(self), second_pane or PanelWin(self)
         nw = self._native_widget
         split = nw.SplitVertically if vertically else nw.SplitHorizontally
-        split(*(natives := [*map(self._resolve, panes)]), sash_position)
+        split(*map(self._resolve, panes), sash_position)
         # wx redraws the native sash over our grip when resizing the panes and
         # on releasing the dragged sash, where the panes keep their size
-        for pane in natives: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
+        for pane in panes:
+            pane._evt_handler(_wx.EVT_SIZE).subscribe(self._refresh_sash)
         # Only our own sash - the events of nested splitters bubble up to us
         nw.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED, self._sash_moved, nw)
         return panes
@@ -401,13 +402,13 @@ class Splitter(_AComponent):
             return pos, 0, sash, h
         return 0, pos, w, sash
 
-    def _refresh_sash(self, event):
-        event.Skip()
+    def _refresh_sash(self):
         self._native_widget.RefreshRect(_wx.Rect(*self._sash_rect()))
 
     def _sash_moved(self, event):
         self._wanted_pos = self._keep_pos and event.GetSashPosition()
-        self._refresh_sash(event)
+        self._refresh_sash()
+        event.Skip()
 
     def _paint_sash(self):
         """Replaces wx's OnPaint - draw the native sash and a grip in its
