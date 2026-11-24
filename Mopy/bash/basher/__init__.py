@@ -1368,7 +1368,9 @@ class ModDetails(_ModsSavesDetails):
             bind_lclick_down = True
         self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
             get_image('plus.16'),
-            btn_tooltip=_('Add bash tags to this plugin.'))
+            btn_tooltip=_('Add bash tags to this plugin.'),
+            # the mouse never clicks it, we finish its left down - the keyboard
+            on_click=self._popup_add_tags)
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
             get_image('minus.16'),
@@ -1593,8 +1595,9 @@ class ModDetails(_ModsSavesDetails):
 
     #--Bash Tags
     @_check_displayed
-    def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
-        """Show bash tag selection menu."""
+    def _popup_add_tags(self, wrapped_evt=None, _lb_dex_and_flags=None):
+        """Show bash tag selection menu - at the mouse or, when the button is
+        clicked from the keyboard, at the button."""
         _mod_details = self
         mod_info: bosh.ModInfo = self.file_info
         app_tags = mod_info.getBashTags()
@@ -1613,8 +1616,8 @@ class ModDetails(_ModsSavesDetails):
             help_text=_('Check a tag to add it to the plugin.'),
             aa_btn_tooltip=_(u'Add all shown tags to the plugin.'),
             ra_btn_tooltip=_(u'Remove all shown tags from the plugin.'))
-        mouse_pos = self._add_tag_btn.to_absolute_position(wrapped_evt.evt_pos)
-        bt_popup.show_popup(mouse_pos)
+        bt_popup.show_popup(self._add_tag_btn.to_absolute_position(
+            wrapped_evt.evt_pos if wrapped_evt else (0, 0)))
         # Returning FINISH is important here because the OS handler will
         # otherwise take focus away from the popup, which causes it to close
         # immediately (since it's transient)
