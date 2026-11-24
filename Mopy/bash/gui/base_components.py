@@ -130,7 +130,7 @@ class AObject:
     def __init__(self, parent=_no_parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
-        wx_widget_type = get_type_hints(self.__class__)['_native_widget']
+        wx_widget_type = self._native_type()
         if parent is not _no_parent:
             args = self._resolve(parent), *args
         widget = wx_widget_type(*args, **kwargs)
@@ -140,13 +140,26 @@ class AObject:
             self._native_widget = widget
 
     @classmethod
+    def _native_type(cls):
+        """Return the type of the native widget we wrap, as _native_widget is
+        annotated. Evaluating the hints is slow - once for each class that
+        has the annotation, not for all that inherit it."""
+        for base in cls.__mro__:
+            if '_native_widget' in getattr(base, '__annotations__', ()):
+                break
+        wx_type = base.__dict__.get('_wx_type')
+        if wx_type is None:
+            wx_type = base._wx_type = get_type_hints(base)['_native_widget']
+        return wx_type
+
+    @classmethod
     def _wrap_object(cls, native_widget, type_check=True) -> Self:
         """Wraps an existing wx object with this class.
 
         Note: if any additional initialization of the _AObject is required, you
         must do it yourself."""
         if type_check:
-            wx_widget_type = get_type_hints(cls)['_native_widget']
+            wx_widget_type = cls._native_type()
             if not isinstance(native_widget, wx_widget_type):
                 raise TypeError(f'Cannot wrap {native_widget!r} with {cls}, '
                                 f'expected {wx_widget_type}')
