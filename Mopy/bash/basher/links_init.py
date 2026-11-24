@@ -918,7 +918,7 @@ def InitScreenLinks():
     for i in range(100, 80, -5):
         jpg_quality_menu.links.append_link(Screens_JpgQuality(i))
     jpg_quality_menu.links.append_link(Screens_JpgQualityCustom())
-    settings_menu.append_link(qualityMenu)
+    settings_menu.append_link(jpg_quality_menu)
     settings_menu.append_link(SeparatorLink())
     ScreensList.global_links[_('Settings')].append_link(Misc_SettingsDialog())
 
