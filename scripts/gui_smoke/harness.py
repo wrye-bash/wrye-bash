@@ -1,9 +1,10 @@
-"""Boot just enough of Wrye Bash to import bash.gui under a real wx.App."""
+"""Boot just enough of Wrye Bash to import bash.gui under a real wx.App -
+or use the app running, when wbdrive.py runs the test in its main loop."""
 import sys, os, builtins
 MOPY = os.path.abspath(os.environ['WB_MOPY'])
 sys.path.insert(0, MOPY)
 import wx
-app = wx.App()
+app = wx.GetApp() or wx.App()
 from bash import localize  # installs _()
 if not hasattr(builtins, '_'):
     builtins._ = lambda s: s

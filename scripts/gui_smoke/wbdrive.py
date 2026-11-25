@@ -2,11 +2,13 @@
 
 WB_MOPY is the Mopy folder to run, WB_FAKE the fake game made by mkgame.py.
 The scenario defines run(frame, shot, log, auto), called once the main loop
-runs. Modal dialogs are answered OK while booting - after that the scenario
+runs. A zz_*.py unit test runs as a module once the main loop runs, its prints
+logged - on wxMSW simulated input only reaches windows while the loop runs. Modal dialogs are answered OK while booting - after that the scenario
 decides, through auto['hook'](dialog) for wx dialogs and
 auto['task_hook'](task_dialog, show_it) for the native TaskDialog of Windows,
 returning None to answer OK. auto['real'] maps each patched class to its
 unpatched ShowModal (show for TaskDialog), to show a dialog for real."""
+import contextlib
 import importlib.abc
 import importlib.util
 import os
@@ -106,19 +108,35 @@ def shot(name):
         log('screenshot failed', traceback.format_exc().splitlines()[-1])
     return p
 
+class _LogLines:
+    """A stdout that logs each line - for the prints of a unit test."""
+    def __init__(self): self._buf = ''
+    def write(self, s):
+        self._buf += s
+        while '\n' in self._buf:
+            line, self._buf = self._buf.split('\n', 1)
+            print(line, file=LOG, flush=True)
+            print('[drive]', line, file=sys.__stdout__, flush=True)
+    def flush(self): pass
+
 spec = importlib.util.spec_from_file_location('scenario', scenario_path)
 scenario = importlib.util.module_from_spec(spec)
 def _run_scenario():
     auto['active'] = False
     rc = 0
     try:
-        spec.loader.exec_module(scenario)
+        if not os.path.basename(scenario_path).startswith('zz_'):
+            spec.loader.exec_module(scenario)
         from bash import balt
         frame = balt.Link.Frame
         nat = frame._native_widget
         log('screen', tuple(wx.GetDisplaySize()), '| frame size',
             tuple(nat.GetSize()), '| active', nat.IsActive())
-        scenario.run(frame, shot, log, auto)
+        if os.path.basename(scenario_path).startswith('zz_'):
+            with contextlib.redirect_stdout(_LogLines()):
+                runpy.run_path(scenario_path, run_name='__main__')
+        else:
+            scenario.run(frame, shot, log, auto)
     except Exception:
         log('SCENARIO FAILED:\n' + traceback.format_exc()); rc = 1
     LOG.flush()

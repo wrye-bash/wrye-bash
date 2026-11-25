@@ -27,8 +27,13 @@ def run(frame, shot, log, auto):
             x, y = nat.ClientToScreen(wx.Point(12, 4)); sim.MouseMove(x, y); pump(2)
             nat.SetFocus(); pump(3)
             if wx.Window.FindFocus() is not nat: return f'NOT FOCUSED ({type(wx.Window.FindFocus()).__name__})'
+            fired = []
+            safety = [wx.CallLater(1500 + 400 * k, lambda: (fired.append(1), sim.Char(wx.WXK_ESCAPE))) for k in range(2)]
             if where == 'menu key': sim.Char(wx.WXK_WINDOWS_MENU)
             else: sim.Char(wx.WXK_F10, wx.MOD_SHIFT)
+            pump(8)
+            for t in safety: t.Stop()
+            if fired: popped.append(f'(a native modal loop was left open - closed with {len(fired)} Escape)')
         else:
             pt = wx.Point(12, nat.GetClientSize()[1] - 3) if where == 'empty' else point_of(nat, where)
             if pt is None: return f'no item {where}'
