@@ -420,27 +420,20 @@ class Progress(bolt.Progress):
             self.dialog = None
 
 #------------------------------------------------------------------------------
-_depth = 0
+conversation_depth = 0
 _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
-    """Decorator to temporarily unbind RefreshData Link.Frame callback, so
-    that the frame being activated again, as a dialog func showed closes,
-    does not refresh the data. On wxMSW that activation comes while the
-    dialog closes, inside func. On wxGTK the main loop delivers it later,
-    with RefreshData bound again - there the data is refreshed once, after
-    func."""
+    """Decorator deferring the RefreshData of the user coming back from
+    another app till func is done - see BashFrame.post_refresh."""
     @wraps(func)
     def _conversation_wrapper(*args, **kwargs):
-        global _depth
+        global conversation_depth
         try:
-            with _lock: _depth += 1 # hack: allow nested conversations
-            refresh_bound = Link.Frame.bind_refresh(bind=False)
+            with _lock: conversation_depth += 1 # allow nested conversations
             return func(*args, **kwargs)
         finally:
-            with _lock: # atomic
-                _depth -= 1
-                if not _depth and refresh_bound:
-                    Link.Frame.bind_refresh(bind=True)
+            with _lock: conversation_depth -= 1 # atomic
+            if not conversation_depth: Link.Frame.post_refresh()
     return _conversation_wrapper
 
 #------------------------------------------------------------------------------

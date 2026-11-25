@@ -76,7 +76,7 @@ from ..bolt import FName, GPath, RefrIn, RefrData, SubProgress, \
     to_win_newlines, top_level_files
 from ..bosh import DataStore, ModInfo, omods, read_dir_tags, read_loot_tags, \
     save_tags_to_dir
-from ..exception import BoltError, CancelError, SkipError, UnknownListener
+from ..exception import BoltError, CancelError, SkipError
 from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     CheckListBox, Color, CopyOrMovePopup, DateAndTimeDialog, DropDown, \
     EventResult, FileOpen, GlobalMenu, HLayout, Label, LayoutOptions, \
@@ -2910,10 +2910,6 @@ class InstallersPanel(BashTab):
         self._data_dir_scanned = False
         self.refreshing = False
         self.frameActivated = False
-        # if user cancels the refresh in wx 3 because progress is an OS
-        # window Bash effectively regains focus and keeps trying to refresh
-        # FIXME(ut) hack we must rewrite Progress for wx 3
-        self._user_cancelled = False
 
     @balt.conversation
     def _first_run_set_enabled(self):
@@ -2934,14 +2930,11 @@ class InstallersPanel(BashTab):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
         if not settings['bash.installers.enabled']:
-            self._user_cancelled = False
             # nothing to refresh, but the status bar and menus are ours now
             Link.Frame.set_status_info(self.sb_count_str(), 2, show_panel=True)
             self.uiList.setup_global_menu()
             return
-        if self.refreshing or self._user_cancelled:
-            self._user_cancelled = False
-            return
+        if self.refreshing: return
         try:
             self.refreshing = True
             if settings.get('bash.installers.updatedCRCs', True): # only checked here
@@ -2954,19 +2947,15 @@ class InstallersPanel(BashTab):
             if self.listData.refreshTracked(): # on first load this is no op
                 what.update('ISC')
             fresh_load = not self.listData.dat_loaded
-            ##:(728) setting progress after boot steals focus from Bash in MSW!
-            prog = (balt.Progress(_('Refreshing Installers…'), abort=canCancel)
-                if fresh_load else bolt.Progress() # should be `if 'I' in what`
-                ) # balt.Progress(_('Refreshing Converters…'), abort=canCancel)
             if what:
-                with (prog if fresh_load else BusyCursor()):
+                with balt.Progress(_('Refreshing Installers…'),
+                                   abort=canCancel) as prog:
                     try:
                         refreshui = self.listData.irefresh('I' in what,
                            what=what, fullRefresh=fullRefresh,
                            extract_omods=extract_omods, progress=prog)
                         self.frameActivated = False
-                    except CancelError:
-                        self._user_cancelled = True # User canceled the refresh
+                    except CancelError: # the user canceled the refresh
                         refreshui = False
                     finally:
                         self._data_dir_scanned = True
@@ -3453,6 +3442,16 @@ class BashFrame(WindowFrame):
         super(BashFrame, self).__init__(parent, title=u'Wrye Bash',
                                         icon_bundle=Resources.bashRed,
                                         sizes_dict=bass.settings)
+        #--Data - before any conversation ends, see balt.conversation
+        self._data_stale = False # user was in another app since RefreshData
+        # posted, as a Progress shown while handling an activation leaves no
+        # window active in MSW - and run only once back in our frame, outside
+        # our dialogs and Progress
+        self.post_refresh = self._make_custom_event(lambda: self._data_stale
+            and not balt.conversation_depth and self._native_widget.IsActive()
+            and self.RefreshData())
+        self.on_activate.subscribe(self._on_activation)
+        self.on_app_activate.subscribe(self._on_app_activation)
         self.set_bash_frame_title()
         # Status Bar & Global Menu
         status_bar = self.statusBar = BashStatusBar(self)
@@ -3464,8 +3463,6 @@ class BashFrame(WindowFrame):
         self.oblivionIniCorrupted = u''
         self.oblivionIniMissing = self._oblivionIniMissing = False
         self.notebook = BashNotebook(self)
-        #--Data
-        self.inRefreshData = False #--Prevent recursion while refreshing.
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -3496,16 +3493,6 @@ class BashFrame(WindowFrame):
                     'details.') % {'data_folder': bush.game.mods_dir_name,
                                    'game_name': bush.game.display_name}
             showWarning(self, message, title=_('Too Many Plugins.'))
-
-    def bind_refresh(self, bind=True):
-        if self._native_widget:
-            try:
-                self.on_activate.subscribe(self.RefreshData) if bind else \
-                    self.on_activate.unsubscribe(self.RefreshData)
-                return True
-            except UnknownListener:
-                # when first called via RefreshData in balt.conversation
-                return False # we were not bound
 
     def Restart(self, *args):
         """Restart Bash - edit bass.sys_argv with specified args then let
@@ -3563,14 +3550,24 @@ class BashFrame(WindowFrame):
         self.statusBar.set_sb_text(infoTxt, field, show_panel=show_panel)
 
     # Events ------------------------------------------------------------------
+    def _on_app_activation(self, app_active):
+        """The user came back from another app - our own dialogs and Progress
+        never activate the app, so they never refresh."""
+        if app_active:
+            self._data_stale = True
+            self.post_refresh()
+
+    def _on_activation(self, evt_active):
+        """The user may come back to another window of ours first, a dialog
+        say. Let the event skip, so wx restores the focus, which IsActive
+        checks in MSW."""
+        if evt_active: self.post_refresh()
+
     @balt.conversation
-    def RefreshData(self, evt_active=True, booting=False):
-        """Refresh all data - window activation event callback, called also
-        on boot."""
-        #--Ignore deactivation events.
-        if not evt_active or self.inRefreshData: return
+    def RefreshData(self, booting=False):
+        """Refresh all data - posted on activation, called on boot."""
+        self._data_stale = False
         #--UPDATES-----------------------------------------
-        self.inRefreshData = True
         #--Config helpers
         bosh.lootDb.refreshBashTags()
         #--Check bsas, needed to detect string files in modInfos refresh...
@@ -3596,8 +3593,6 @@ class BashFrame(WindowFrame):
             self._warn_imported_launchers()
         self._warn_reset_load_order()
         self.warn_game_ini()
-        #--Done (end recursion blocker)
-        self.inRefreshData = False
 
     @balt.conversation
     def _warn_imported_launchers(self): ##:(734:570)
@@ -3688,7 +3683,7 @@ class BashFrame(WindowFrame):
         try:
             # Save sizes here, in the finally clause position is not saved
             super(BashFrame, self).on_closing(destroy=False)
-            self.bind_refresh(bind=False)
+            self.on_app_activate.unsubscribe(self._on_app_activation)
             self.SaveSettings(destroy=True)
         except:
                 deprint(u'An error occurred while trying to save settings:',

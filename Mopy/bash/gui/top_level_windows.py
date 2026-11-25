@@ -32,7 +32,7 @@ import wx.adv as _adv
 from .base_components import Color, _AComponent, scaled, WithDragEvents
 from .buttons import OkButton
 from .doc_viewer import DocumentViewer
-from .events import EventResult
+from .events import EventHandler, EventResult
 from .layouts import HLayout, LayoutOptions, Stretch, VLayout, RIGHT
 from .menus import Links
 from .text_components import TextArea
@@ -131,6 +131,8 @@ class WindowFrame(_TopLevelWin):
     Events:
      - on_activate(is_active: bool): Posted when the frame is activated or
        deactivated.
+     - on_app_activate(is_active: bool): Posted when the user switches to the
+       app from another one, or away from it - not by the app's own windows.
      """
     _min_size = _def_size = (250, 250)
     _native_widget: _wx.Frame
@@ -148,6 +150,8 @@ class WindowFrame(_TopLevelWin):
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
+        self.on_app_activate = EventHandler(_wx.GetApp(), # sent to the app
+            _wx.EVT_ACTIVATE_APP, lambda event: [event.GetActive()])
         self.set_background_color(Color.from_system('MENU'))
 
     def show_frame(self, center=False):
