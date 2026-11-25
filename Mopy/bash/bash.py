@@ -149,9 +149,27 @@ def _import_wx():
         def InitLocale(self):
             if sys.platform.startswith('win') and sys.version_info > (3, 8):
                 locale.setlocale(locale.LC_CTYPE, 'C')  # pass?
+    # Before any window - and the App, as wx 3.3 caches the display sizes
+    from . import env
+    env.mark_high_dpi_aware()
+    env.fixup_taskbar_icon()
     # Initialize the App instance once
     global bash_app
     bash_app = _BaseApp(bass.is_standalone)
+    _wx.Log.SetLogLevel(_wx.LOG_Info) # wx 3.3 spams debug messages to stderr
+    # before any window: a boot setting, as the game's settings come later -
+    # shared by every install, so a wx 4.2 one may read it too
+    if bolt.os_name == 'nt' and hasattr(bash_app, 'MSWEnableDarkMode') and (
+            dark := bass.boot_settings['Boot']['dark_mode']) in ('on', 'auto'):
+        class _DarkSettings(_wx.DarkModeSettings):
+            def GetColour(self, index):
+                """Selected list items grey, like tree ones - wx's blue hides
+                their colored text."""
+                if index == _wx.SYS_COLOUR_HIGHLIGHT:
+                    return _wx.Colour(51, 51, 51)
+                return super().GetColour(index)
+        bash_app.MSWEnableDarkMode(_wx.App.DarkMode_Auto if dark == 'auto'
+            else _wx.App.DarkMode_Always, _DarkSettings()) # wx owns it
     if bass.is_standalone:
         # No console on the standalone version, so we have wxPython take
         # over. However, we don't want it to grab the stdout stream (since
@@ -166,20 +184,16 @@ def _import_wx():
     # the object must stay alive so let's reference it on the App
     from . import localize
     bash_app.locale = localize.set_wx_locale(_wx, bass.active_locale)
-    # Both of these must come early, before we begin showing wx-based GUI
-    from . import env
-    env.mark_high_dpi_aware()
-    env.fixup_taskbar_icon()
     # Initialize gui, our wrapper above wx (also balt, temp module)
     from . import balt, gui
-    if not bass.is_standalone and not wxver.startswith('4.2'):
+    if not bass.is_standalone and not wxver.startswith('4.3'):
         titl = _('Unsupported wxPython Version Detected')
         warn = _('Warning: you appear to be using a non-supported version of '
                  'wxPython (%(curr_wx_ver)s). This will cause problems! It is '
                  'highly recommended you use a %(supported_wx_series)s '
                  'version. Do you still want to run Wrye Bash?')
         if not gui.askYes(None, warn % {'curr_wx_ver': wxver,
-                'supported_wx_series': '4.2.x'}, title=titl):
+                'supported_wx_series': '4.3.x'}, title=titl):
             sys.exit() # the user chose not to run Wrye Bash
     # load the window icon resources now that we have an app instance
     balt.load_app_icons()
@@ -303,7 +317,9 @@ def exit_cleanup():
     bs_comments = defaultdict(dict, {'Boot': {
         'locale': _('The locale to set when launching Wrye Bash.'),
         'last_game': _("The display name of the last game that was launched "
-                       "through Wrye Bash's 'Select Game' dialog.")}})
+                       "through Wrye Bash's 'Select Game' dialog."),
+        'dark_mode': _("Whether to use a dark color scheme on Windows: 'on', "
+                       "'off', or 'auto' to follow the system setting.")}})
     bs_dict, bs_defaults = bass.boot_settings, bass.boot_settings_defaults
     # Write out only the boot settings that have been changed from their
     # defaults - add in comments as well

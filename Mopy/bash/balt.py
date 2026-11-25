@@ -41,7 +41,7 @@ from .env import BTN_NO, BTN_YES, TASK_DIALOG_AVAILABLE
 from .exception import CancelError, SkipError, StateError
 from .gui import BusyCursor, Button, CancelButton, CENTER, CheckListBox, \
     Color, DialogWindow, DirOpen, EventResult, FileOpen, FileSave, \
-    GlobalMenu, HLayout, OkButton, \
+    GlobalMenu, HLayout, OkButton, is_dark_mode, \
     LayoutOptions, ListBox, Links, LogDialog, LogFrame, PanelWin, TextArea, \
     UIListCtrl, VLayout, bell, copy_files_to_clipboard, DeletionDialog, \
     web_viewer_available, AutoSize, get_shift_down, ContinueDialog, askText, \
@@ -1883,7 +1883,7 @@ _wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
 
 # Some UAC stuff --------------------------------------------------------------
 def ask_uac_restart(message, mopy):
-    if not TASK_DIALOG_AVAILABLE:
+    if not TASK_DIALOG_AVAILABLE or is_dark_mode(): # see AskDialog
         message += '\n\n' + _('Start Wrye Bash with Administrator Privileges?')
         btns = ex = None
     else:

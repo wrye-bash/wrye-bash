@@ -107,6 +107,29 @@ colorInfo = {
     ),
 }
 
+# What dark mode shows instead of the stock colours - a name is that of a
+# system colour, see gui.Color.from_system
+dark_colors = {
+    'default.text': 'WINDOWTEXT',
+    'default.bkgd': 'WINDOW',
+    # blues and a purple that are unreadable on dark
+    'mods.text.esm': (110, 150, 255),
+    'mods.text.eslm': (160, 90, 255),
+    'installers.text.complex': (130, 140, 255),
+    # pale row backgrounds designed for dark text
+    'mods.bkgd.doubleTime.exists': (92, 46, 46),
+    'mods.bkgd.doubleTime.load': (135, 50, 50),
+    'mods.bkgd.ghosted': (62, 62, 62),
+    'mods.bkgd.size_mismatch': (84, 68, 42),
+    'ini.bkgd.invalid': (62, 62, 62),
+    'tweak.bkgd.invalid': (98, 66, 30),
+    'tweak.bkgd.mismatched': (88, 88, 38),
+    'tweak.bkgd.matched': (42, 84, 42),
+    'installers.bkgd.skipped': (62, 62, 62),
+    'installers.bkgd.outOfOrder': (112, 112, 0),
+    'installers.bkgd.dirty': (130, 86, 20),
+}
+
 # Only show color options when the game actually supports them
 # Do masters have working DATA subrecords? ------------------------------------
 if bush.game.Esp.check_master_sizes:

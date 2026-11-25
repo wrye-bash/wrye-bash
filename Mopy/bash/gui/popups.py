@@ -34,6 +34,7 @@ from .base_components import Color, _AComponent
 from .buttons import Button, CancelButton, DeselectAllButton, OkButton, \
     PureImageButton, SelectAllButton
 from .checkables import CheckBox
+from .functions import is_dark_mode
 from .images import StaticBmp
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VBoxedLayout, \
     VLayout, TOP
@@ -589,7 +590,8 @@ class AskDialog(_AModal):
                 _wx.ICON_ERROR) | (info_ico and _wx.ICON_INFORMATION)
         if do_center:
             style |= _wx.CENTER
-        if not TASK_DIALOG_AVAILABLE:
+        # wx's dark mode themes only its own task dialogs
+        if not TASK_DIALOG_AVAILABLE or is_dark_mode():
             return super().display_dialog(*args, style=style, **kwargs)
         if vista_buttons is None:
             vista_buttons = []
@@ -614,6 +616,8 @@ class ContinueDialog(DialogWindow):
                  show_cancel, *, sizes_dict=None):
         super().__init__(parent, title, sizes_dict=sizes_dict)
         self.gCheckBox = CheckBox(self, checkBoxTxt)
+        msg_label = Label(self, message)
+        msg_label.wrap(400) # and the dialog fits its contents
         #--Layout
         bottom_items = [self.gCheckBox, Stretch(), OkButton(self)]
         if show_cancel:
@@ -621,11 +625,11 @@ class ContinueDialog(DialogWindow):
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
                 (StaticBmp(self), LayoutOptions(border=6, v_align=TOP)),
-                (Label(self, message), LayoutOptions(expand=True, weight=1))]),
+                (msg_label, LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
             HorizontalLine(self),
             HLayout(spacing=4, item_expand=True, items=bottom_items),
-        ]).apply_to(self)
+        ]).apply_to(self, fit=True)
 
     def show_modal(self):
         #--Get continue key setting and return
@@ -636,7 +640,7 @@ class ContinueDialog(DialogWindow):
     @classmethod
     def display_dialog(cls, *args, **kwargs):
         #--Get continue key setting and return
-        if TASK_DIALOG_AVAILABLE:
+        if TASK_DIALOG_AVAILABLE and not is_dark_mode(): # see AskDialog
             parent, *args = args
             if not kwargs.pop('show_cancel', False):
                 kwargs['vista_buttons'] = ((BTN_OK, 'ok'),)

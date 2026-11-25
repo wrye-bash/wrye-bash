@@ -32,6 +32,7 @@ import wx.svg as _svg
 
 from ._gui_globals import get_image, get_image_dir
 from .base_components import Lazy, _AComponent, scaled
+from .functions import is_dark_mode
 from ..bolt import deprint, Path
 from ..exception import ArgumentError, GuiError
 
@@ -168,12 +169,10 @@ class _SvgFromPath(_BitmapBundle):
     
     def _svg_vars(self):
         from .. import bass
-        if bass.settings:
-            return {
-                b'invert': b'#FFF' if bass.settings['bash.use_reverse_icons'] else b'#000'
-            } | self._cached_svg_vars
-        else:
-            return self._cached_svg_vars
+        if is_dark_mode() or bass.settings:
+            return {b'invert': b'#FFF' if is_dark_mode() or bass.settings[
+                'bash.use_reverse_icons'] else b'#000'} | self._cached_svg_vars
+        return self._cached_svg_vars
 
 class IcoFromPng(GuiImage):
     """The wx.Icon of a GuiImage, for the title bar of a window - no new uses

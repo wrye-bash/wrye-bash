@@ -183,6 +183,8 @@ class Table(WithCharEvents):
         # Create the Grid, then populate it from table_data
         # Note order here and below - row, col is correct for wx
         self._native_widget.CreateGrid(column_len, len(table_data))
+        # wx 3.3 grids start with no current cell - get_focused_cell needs one
+        self._native_widget.SetGridCursor(0, 0)
         self._native_widget.EnableEditing(editable)
         self._label_to_col_index = {}
         for c, column_label in enumerate(table_data):

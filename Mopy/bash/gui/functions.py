@@ -104,3 +104,8 @@ def get_key_down(key_char: str) -> bool:
 def get_shift_down() -> bool:
     """Returns True if the Shift key is currently down."""
     return _wx.GetKeyState(_wx.WXK_SHIFT)
+
+def is_dark_mode() -> bool:
+    """True if Wrye Bash shows dark colours: Windows' dark mode, which
+    bash.py turns on from the boot settings, or a dark theme elsewhere."""
+    return _wx.SystemSettings.GetAppearance().IsDark()

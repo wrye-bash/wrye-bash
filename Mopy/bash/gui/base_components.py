@@ -108,6 +108,13 @@ class Color:
         :return: A Color object representing the same color."""
         return cls(color.Red(), color.Green(), color.Blue(), color.Alpha())
 
+    @classmethod
+    def from_system(cls, color_name: str) -> Color:
+        """The system color SYS_COLOUR_<color_name> - e.g. WINDOW, the
+        background of lists, which dark mode darkens."""
+        return cls.from_wx(_wx.SystemSettings.GetColour(
+            getattr(_wx, f'SYS_COLOUR_{color_name}')))
+
 class _ACFrozen:
     """Helper for _AComponent.pause_drawing."""
     def __init__(self, wx_parent):

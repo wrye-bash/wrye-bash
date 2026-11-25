@@ -8,7 +8,7 @@ lz4==4.4.5
 pywin32==311; sys_platform == 'win32'
 PyYAML==6.0.3
 vdf==3.4
-wxPython==4.2.5
+wxPython==4.3.2
 # Runtime, recommended --------------------------------------------------------
 # For FOMOD schema validation
 lxml==6.1.0

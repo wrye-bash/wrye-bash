@@ -60,7 +60,7 @@ from enum import Enum
 from functools import partial
 from itertools import chain, repeat, starmap, count
 # basher-local imports - maybe work towards dropping (some of) these?
-from .constants import colorInfo, settingDefaults
+from .constants import colorInfo, dark_colors, settingDefaults
 from .dialogs import CreateNewPlugin, CreateNewProject, UpdateNotification, \
     DependentsAffectedDialog, MastersAffectedDialog, MultiWarningDialog, \
     LoadOrderSanitizedDialog
@@ -86,7 +86,7 @@ from ..gui import CENTER, BusyCursor, Button, CancelButton, CenteredSplash, \
     get_shift_down, read_files_from_clipboard_cb, showError, askYes, \
     showWarning, askWarning, showOk, BmpFromStream, init_image_resources, \
     get_image, get_installer_color_checks, get_image_dir, \
-    copy_text_to_clipboard
+    copy_text_to_clipboard, is_dark_mode
 from ..localize import format_date
 from ..plugin_types import active_keys, ST_MERGED
 from ..update_checker import LatestVersion, UCThread
@@ -1431,8 +1431,8 @@ class ModDetails(_ModsSavesDetails):
         if inf and not inf.mod_auto_bash_tags:
             self.gTags.set_background_color(
                 self.gAuthor.get_background_color())
-        else:
-            self.gTags.set_background_color(self.get_background_color())
+        else: # panels show the WindowFrame's color, not the one they report
+            self.gTags.set_background_color(Color.from_system('MENU'))
 
     def _set_author_label(self, new_author_str):
         """Helper method for setting the right count etc. in the Author
@@ -3834,6 +3834,16 @@ def InitSettings(): # this must run first !
     bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']
     init_gui_patchers()
 
+def dark_color(key, rgb):
+    """The colour shown for key when rgb is saved - in dark mode a stock
+    colour shows as its dark version, the saved settings keep it stock."""
+    if key in dark_colors and is_dark_mode() and rgb == settingDefaults[
+            'bash.colors'][key]:
+        dark = dark_colors[key]
+        return Color.from_system(dark).to_rgb_tuple() if isinstance(
+            dark, str) else dark
+    return rgb
+
 def InitImages():
     """Initialize color and image collections."""
     ##:(734) backwards compat - remove on settings update
@@ -3852,7 +3862,7 @@ def InitImages():
         if isinstance(color_val, bytes):
             color_val = _conv_dict[color_val]
             settings[u'bash.colors'][color_key] = color_val
-        colors[color_key] = Color(*color_val)
+        colors[color_key] = Color(*dark_color(color_key, color_val))
     #--Images
     init_image_resources(bass.dirs['images'])
 

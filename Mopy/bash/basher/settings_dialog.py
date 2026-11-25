@@ -25,12 +25,12 @@ import pathlib
 import webbrowser
 from collections import defaultdict
 
-from . import TabInfo
+from . import TabInfo, dark_color
 from .constants import colorInfo, settingDefaults
 from .dialogs import UpdateNotification
 from .. import balt, barb, bass, bolt, bosh, bush, exception
 from ..balt import BashStatusBar, Link, Resources, colors
-from ..bolt import deprint, dict_sort, readme_url, reverse_dict
+from ..bolt import deprint, readme_url, reverse_dict
 from ..env import is_uac, join_launcher_args, shellDelete, shellMove, \
     split_launcher_args
 from ..gui import ApplyButton, ATreeMixin, BusyCursor, Button, CancelButton, \
@@ -224,6 +224,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def __init__(self, parent, page_desc):
         super(ColorsPage, self).__init__(parent, page_desc)
+        # the colors to save - the picker shows them as dark_color does
         self.changes = {}
         #--DropDown
         def _display_text(k):
@@ -280,58 +281,46 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                 if (pan := btab.tab_panel) is not None:
                     pan.RefreshUIColors()
 
+    def _saved_rgb(self, col_key):
+        """The color col_key will be saved as."""
+        return self.changes.get(col_key, bass.settings['bash.colors'][col_key])
+
     def UpdateUIButtons(self):
         # Apply All and Default All
-        for col_key, changed_color in list(self.changes.items()):
-            if changed_color == colors[col_key]:
+        for col_key, rgb in list(self.changes.items()):
+            if rgb == bass.settings['bash.colors'][col_key]:
                 del self.changes[col_key]
-        anyChanged = bool(self.changes)
-        allDefault = True
-        for col_key, col_value in colors.items():
-            if col_key in self.changes:
-                color = self.changes[col_key]
-            else:
-                color = col_value
-            default = color == Color(*settingDefaults[u'bash.colors'][col_key])
-            if not default:
-                allDefault = False
-                break
+        stock = settingDefaults['bash.colors']
+        allDefault = all(self._saved_rgb(k) == stock[k] for k in colors)
         # Apply and Default
         col_key = self.GetColorKey()
-        if col_key in self.changes:
-            color = self.changes[col_key]
-        else:
-            color = colors[col_key]
-        default = color == Color(*settingDefaults[u'bash.colors'][col_key])
+        rgb = self._saved_rgb(col_key)
         # Update the Buttons, DropDown, and ColorPicker
         if self._mark_changed:
             # If _mark_changed is None, then we're still in the construction
             # phase. The apply button is never going to be on without user
             # input, so this is fine
-            self._mark_changed(self, is_changed=anyChanged)
-        self.default.enabled = not default
+            self._mark_changed(self, is_changed=bool(self.changes))
+        self.default.enabled = rgb != stock[col_key]
         self.defaultAll.enabled = not allDefault
-        self.picker.set_color(color)
+        self.picker.set_color(Color(*dark_color(col_key, rgb)))
         self.comboBox.set_focus_from_kb()
 
     def OnDefault(self):
         color_key = self.GetColorKey()
-        newColor = Color(*settingDefaults[u'bash.colors'][color_key])
-        self.changes[color_key] = newColor
+        self.changes[color_key] = settingDefaults['bash.colors'][color_key]
         self.UpdateUIButtons()
 
     def OnDefaultAll(self):
-        for col_key, col_value in colors.items():
-            default = Color(*settingDefaults['bash.colors'][col_key])
-            if col_value != default:
-                self.changes[col_key] = default
+        # UpdateUIButtons drops the colors that are stock already
+        self.changes.update(settingDefaults['bash.colors'])
         self.UpdateUIButtons()
 
     def on_apply(self):
         if self.changes:
-            for key,newColor in self.changes.items():
-                bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
-                colors[key] = newColor
+            for key, rgb in self.changes.items():
+                bass.settings['bash.colors'][key] = rgb
+                colors[key] = Color(*dark_color(key, rgb))
             self.UpdateUIButtons()
             self.UpdateUIColors()
 
@@ -345,12 +334,8 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         if not outPath: return
         try:
             with outPath.open(u'w', encoding=u'utf-8') as out:
-                for col_key, col_value in dict_sort(colors):
-                    if col_key in self.changes:
-                        color = self.changes[col_key]
-                    else:
-                        color = col_value
-                    out.write(f'{col_key}: {color.to_rgb_tuple()}\n')
+                for col_key in sorted(colors):
+                    out.write(f'{col_key}: {self._saved_rgb(col_key)}\n')
         except Exception as e:
             msg = _('An error occurred writing to %(color_export_file)s:') % {
                 'color_export_file': outPath.stail}
@@ -387,10 +372,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                             break
                     else:
                         # All checks passed, save it
-                        if (color_key not in self.changes and (
-                            color := Color(*color_tup)) == colors[color_key]):
-                            continue # skip, identical to our current state
-                        self.changes[color_key] = color
+                        self.changes[color_key] = color_tup[:3]
         except Exception as e:
             msg = _('An error occurred reading from '
                     '%(color_import_file)s:') % {
@@ -405,8 +387,11 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def OnColorPicker(self):
         color_key = self.GetColorKey()
-        newColor = self.picker.get_color()
-        self.changes[color_key] = newColor
+        rgb = self.picker.get_color().to_rgb_tuple()
+        stock = settingDefaults['bash.colors'][color_key]
+        # picking the dark version of a stock color picks the stock one
+        self.changes[color_key] = stock if rgb == dark_color(
+            color_key, stock) else rgb
         self.UpdateUIButtons()
 
 # Languages -------------------------------------------------------------------
@@ -505,7 +490,7 @@ class LanguagePage(_AScrollablePage):
 # Misc Appearance -------------------------------------------------------------
 class MiscAppearancePage(_AFixedPage):
     """Appearance settings that don't fix anywhere else yet."""
-    _setting_ids = {'alt_name_on', 'rev_icons_on'}
+    _setting_ids = {'alt_name_on', 'rev_icons_on', 'dark_mode'}
 
     def __init__(self, parent, page_desc):
         super().__init__(parent, page_desc)
@@ -521,11 +506,26 @@ class MiscAppearancePage(_AFixedPage):
         self._reverse_icons_checkbox = CheckBox(self, _('Reverse Icon Colors'),
             chkbx_tooltip=tt, checked=bass.settings['bash.use_reverse_icons'],
             on_check=self._on_rev_icons)
+        # 'off', not None - exit_cleanup skips defaults, keeping an old 'on'
+        self._dark_modes = {_('Off'): 'off', _('On'): 'on',
+                            _('Follow Windows'): 'auto'}
+        self._dark_dropdown = DropDown(self, value=reverse_dict(
+            self._dark_modes).get(bass.boot_settings['Boot']['dark_mode'],
+                                  _('Off')), choices=[*self._dark_modes],
+            dd_tooltip=_('Use a dark color scheme for Wrye Bash. Requires a '
+                         'restart. Windows only.'))
+        self._dark_dropdown.on_combo_select.subscribe(lambda dark_label:
+            self._mark_setting_changed('dark_mode', self._dark_modes[
+                dark_label] != (bass.boot_settings['Boot']['dark_mode'] or
+                                'off')))
+        self._dark_dropdown.enabled = bolt.os_name == 'nt'
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._page_desc_label,
             HorizontalLine(self),
             self._alt_name_checkbox,
             self._reverse_icons_checkbox,
+            HLayout(spacing=6, items=[
+                Label(self, _('Dark Mode:')), self._dark_dropdown]),
         ]).apply_to(self)
 
     def _on_alt_name(self, checked):
@@ -537,6 +537,13 @@ class MiscAppearancePage(_AFixedPage):
             checked != bass.settings['bash.use_reverse_icons'])
 
     def on_apply(self):
+        # Dark Mode
+        if self._is_changed('dark_mode'):
+            dark_label = self._dark_dropdown.get_value()
+            bass.boot_settings['Boot']['dark_mode'] = self._dark_modes[
+                dark_label]
+            self._request_restart(_('Dark Mode: %(dark_mode)s') % {
+                'dark_mode': dark_label})
         # Use Alternate Wrye Bash Name
         if self._is_changed('alt_name_on'):
             new_alt_name = self._alt_name_checkbox.is_checked

@@ -61,6 +61,7 @@ boot_settings_defaults = {
     'Boot': {
         'locale': None,
         'last_game': None,
+        'dark_mode': None,
     },
 }
 boot_settings = copy.deepcopy(boot_settings_defaults)

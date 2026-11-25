@@ -148,8 +148,7 @@ class WindowFrame(_TopLevelWin):
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
-        self.set_background_color(
-            Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU)))
+        self.set_background_color(Color.from_system('MENU'))
 
     def show_frame(self, center=False):
         self._native_widget.Show()
