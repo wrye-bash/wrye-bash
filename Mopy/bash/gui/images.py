@@ -198,7 +198,7 @@ class _BmpFromIcoPath(_BitmapBundle):
     """An .ico, or the icon of an exe or dll ('path;index')."""
 
     def _bitmaps(self):
-        return [_wx.Bitmap(self._icon_image(s)) for s in self._sizes()]
+        return [*map(_wx.Bitmap, map(self._icon_image, self._sizes()))]
 
     def _icon_image(self, size: int) -> _wx.Image:
         ico = _wx.Icon(self._img_path, self._img_type, size, size)
