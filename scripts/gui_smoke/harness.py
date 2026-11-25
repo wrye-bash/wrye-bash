@@ -11,6 +11,7 @@ from bash import bolt, bass
 from bash import gui
 from bash.gui import _gui_globals
 _gui_globals.init_image_resources(bolt.GPath(MOPY + '/bash/images'))
+from sclib import activate, press # real input helpers
 
 def pump(n=5):
     for _i in range(n):

@@ -20,7 +20,7 @@ def run(frame, shot, log, auto):
         # without a window manager the keys go to the window under the mouse - the prompt is centred on the frame
         x, y, w, h = nat.GetScreenRect(); sim.MouseMove(x + w // 2, y + h // 2); pump(3)
         wx.CallLater(800, press)
-        safety = wx.CallLater(5000, lambda: (seen.append('KEY DID NOT LAND - safety Escape'), sim.Char(wx.WXK_ESCAPE)))
+        safety = wx.CallLater(3000, lambda: (seen.append('still open 2 s after the key - Alt+N'), sim.Char(ord('N'), wx.MOD_ALT)))
         answer = balt.askYes(frame, 'Question?', 'Title', default_is_yes=default_is_yes)
         safety.Stop(); pump(3)
         log(f'askYes(default_is_yes={default_is_yes}), {key_name} -> {"Yes" if answer else "No"} | {", ".join(seen)}')

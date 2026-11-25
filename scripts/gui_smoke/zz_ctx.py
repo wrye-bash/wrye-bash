@@ -31,7 +31,7 @@ for name, comp in (('lb', lb), ('clb', clb)):
     nat.SetSelection(1); nat.SetSelection(3); r1 = send(nat, wx.DefaultPosition)
     print(ok(r0[2] == [(name, -1)] and r1[2] == [(name, 1)]), f'{name}: from the keyboard -> first selected, -1 if none:', r0[2], r1[2], '| selections', list(nat.GetSelections()))
     # a real right click: wxGTK makes the context event from the right button going down
-    del got[:]; sp = nat.ClientToScreen(pts[2]); sim = wx.UIActionSimulator(); sim.MouseMove(sp.x, sp.y); pump(3); sim.MouseClick(wx.MOUSE_BTN_RIGHT); pump(8)
+    activate(host); del got[:]; sp = nat.ClientToScreen(pts[2]); sim = wx.UIActionSimulator(); sim.MouseMove(sp.x, sp.y); pump(3); sim.MouseClick(wx.MOUSE_BTN_RIGHT); pump(8)
     print(ok(got == [(name, 2)]), f'{name}: real right click on the third item ->', got)
 qn = quiet._native_widget; r = send(qn, qn.ClientToScreen(wx.Point(5, 5)))
 print(ok(r[0] is False), 'a list box nobody listens to does not take the context event:', r)

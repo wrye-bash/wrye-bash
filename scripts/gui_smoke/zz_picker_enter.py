@@ -17,6 +17,7 @@ sizer = wx.BoxSizer(wx.VERTICAL)
 for _n, f in fields: sizer.Add(f._native_widget, 0, wx.EXPAND | wx.ALL, 4)
 sizer.Add(ok._native_widget, 0, wx.ALL, 4)
 dlg.SetSizer(sizer); dlg.Layout(); dlg.Show(); dlg.Raise(); pump(10)
+print('dialog active:', activate(dlg))
 print('default item is OK:', dlg.GetDefaultItem() is ok._native_widget)
 sim = wx.UIActionSimulator()
 def text_native(f):
@@ -26,7 +27,7 @@ def enter(native, key):
     x, y = native.ClientToScreen((8, 8)); sim.MouseMove(x, y); pump(3)
     native.SetFocus(); pump(4)
     focused = wx.Window.FindFocus() is native
-    del calls[:]; sim.Char(key); pump(10)
+    del calls[:]; press(key); pump(10)
     return focused, list(calls)
 for name, f in fields:
     for key, kname in ((wx.WXK_RETURN, 'Enter'), (wx.WXK_NUMPAD_ENTER, 'keypad Enter')):

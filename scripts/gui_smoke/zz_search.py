@@ -5,6 +5,7 @@ from bash.gui import SearchBar, PanelWin
 host = wx.Frame(None, size=(300, 120), pos=(40, 40)); panel = PanelWin(host)
 sb = SearchBar(panel); sz = wx.BoxSizer(wx.VERTICAL); sz.Add(sb._native_widget, 0, wx.EXPAND | wx.ALL, 8)
 panel._native_widget.SetSizer(sz); host.Show(); host.Raise(); pump(10)
+print('frame active:', activate(host))
 texts = []; sb.on_text_changed.subscribe(texts.append)
 nat = sb._native_widget; sim = wx.UIActionSimulator(); w, h = nat.GetSize(); res = []
 for dx in (10, 14, 20, 26):

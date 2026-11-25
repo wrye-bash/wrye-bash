@@ -80,7 +80,7 @@ def main():
     ap.add_argument('--tree', action='append', required=True,
                     help='NAME=MOPY - the first one is the baseline')
     ap.add_argument('--out', default=os.path.join(HERE, 'out'))
-    ap.add_argument('--timeout', type=int, default=150)
+    ap.add_argument('--timeout', type=int, default=90)
     ap.add_argument('tests', nargs='*')
     args = ap.parse_args()
     trees = [t.split('=', 1) for t in args.tree]

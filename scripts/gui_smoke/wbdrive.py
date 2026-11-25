@@ -116,8 +116,8 @@ def _run_scenario():
         from bash import balt
         frame = balt.Link.Frame
         nat = frame._native_widget
-        log('screen', tuple(wx.GetDisplaySize()), '| frame', tuple(nat.GetRect()),
-            '| active', nat.IsActive())
+        log('screen', tuple(wx.GetDisplaySize()), '| frame size',
+            tuple(nat.GetSize()), '| active', nat.IsActive())
         scenario.run(frame, shot, log, auto)
     except Exception:
         log('SCENARIO FAILED:\n' + traceback.format_exc()); rc = 1

@@ -17,3 +17,28 @@ def save_tree(win, path):
     out = []; dump_tree(win, out)
     with open(path, 'w') as f: f.write('\n'.join(out) + '\n')
     return len(out)
+
+def press(code, modifiers=0):
+    """Press and release a key for real. On wxMSW the simulator has no
+    mapping for keypad Enter (it sends F3) - send an extended Return then."""
+    if code == wx.WXK_NUMPAD_ENTER and wx.Platform == '__WXMSW__':
+        import ctypes
+        keybd_event = ctypes.windll.user32.keybd_event
+        keybd_event(0x0D, 0, 1, 0) # VK_RETURN, KEYEVENTF_EXTENDEDKEY
+        keybd_event(0x0D, 0, 1 | 2, 0) # and KEYEVENTF_KEYUP
+        return True
+    return wx.UIActionSimulator().Char(code, modifiers)
+
+def activate(win):
+    """Make the top level window of win the active one, as a user clicking
+    its title bar would - on Windows a process may not bring its own windows
+    to the front, the keys it simulates would go to another window."""
+    win = getattr(win, '_native_widget', win)
+    top = win if win.IsTopLevel() else wx.GetTopLevelParent(win)
+    top.Raise(); pump(3)
+    if wx.Platform == '__WXMSW__' and not top.IsActive():
+        x, y, w, _h = top.GetScreenRect()
+        sim = wx.UIActionSimulator()
+        sim.MouseMove(x + w // 2, y + 10); pump(2)
+        sim.MouseClick(); pump(6)
+    return top.IsActive()

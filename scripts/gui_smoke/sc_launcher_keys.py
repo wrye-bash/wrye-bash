@@ -1,7 +1,7 @@
 """Real Enter keys in the launcher fields of the Status Bar settings page: is the launcher saved, does wx click OK?"""
 import os, sys, wx, traceback
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sclib import pump
+from sclib import pump, press
 def run(frame, shot, log, auto):
     from bash.basher import settings_dialog
     def hook(dlg):
@@ -24,7 +24,7 @@ def run(frame, shot, log, auto):
                 x, y = native.ClientToScreen((8, 8)); sim.MouseMove(x, y); pump(3)
                 native.SetFocus(); pump(4)
                 focused = wx.Window.FindFocus() is native
-                del calls[:]; sim.Char(key); pump(10)
+                del calls[:]; press(key); pump(10)
                 return focused, list(calls)
             def native_of(f):
                 nw = f._native_widget

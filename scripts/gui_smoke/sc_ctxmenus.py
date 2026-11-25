@@ -82,6 +82,7 @@ def run(frame, shot, log, auto):
                 if kind == 'tweak':
                     nat = lst._native_widget; tips = []
                     for i in (0, min(1, n - 1)):
+                        if point_of(nat, i) is None: tips.append(f'no point for item {i}'); continue
                         ev = wx.MouseEvent(wx.wxEVT_MOTION); ev.SetPosition(point_of(nat, i)); ev.SetEventObject(nat); nat.GetEventHandler().ProcessEvent(ev)
                         tips.append(pd.gTipText.label_text[:40])
                     ev = wx.MouseEvent(wx.wxEVT_LEAVE_WINDOW); ev.SetEventObject(nat); nat.GetEventHandler().ProcessEvent(ev)

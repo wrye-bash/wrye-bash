@@ -20,6 +20,7 @@ h, n = enter(d.tf); print('OK ' if h and n == 1 else 'BAD', 'TextField Enter: ha
 h, n = enter(d.sb); print('OK ' if n == 0 else 'BAD', 'SearchBar Enter: OK button clicked', n, 'time(s) | handled', h)
 # the same with real key presses, through GTK
 sim = wx.UIActionSimulator()
+print('dialog active:', activate(d))
 def real_enter(comp):
     del clicks[:]; comp._native_widget.SetFocus(); pump(8); sim.Char(wx.WXK_RETURN); pump(15); return len(clicks)
 n = real_enter(d.tf); print('OK ' if n == 1 else 'BAD', 'real Enter key in the TextField: OK button clicked', n, 'time(s)')
