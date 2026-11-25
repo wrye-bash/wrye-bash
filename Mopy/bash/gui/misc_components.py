@@ -432,12 +432,13 @@ class _PathPicker(_AComponent):
             self.text_field._set_hint(hint)
         if on_enter: # needs use_text_ctrl, made without TE_PROCESS_ENTER, so
             # the dialog would click its default button before we see Enter
-            txt = self._native_widget.GetTextCtrl()
-            txt.SetWindowStyleFlag(txt.GetWindowStyleFlag() |
-                                   _wx.TE_PROCESS_ENTER)
-            txt.Bind(_wx.EVT_KEY_DOWN, lambda evt: on_enter() if
-                evt.GetKeyCode() in (_wx.WXK_RETURN, _wx.WXK_NUMPAD_ENTER)
-                else evt.Skip())
+            txt = self.text_field
+            txt_native = txt._native_widget
+            txt_native.SetWindowStyleFlag(txt_native.GetWindowStyleFlag() |
+                                          _wx.TE_PROCESS_ENTER)
+            # Never skipped - wx would click the default button itself
+            txt._evt_handler(_wx.EVT_TEXT_ENTER, skip=False).subscribe(
+                on_enter)
 
     def set_initial_directory(self, initial_dir: os.PathLike[str]) -> None:
         self._native_widget.SetInitialDirectory(os.fspath(initial_dir))
