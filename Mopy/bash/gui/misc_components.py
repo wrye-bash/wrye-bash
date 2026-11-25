@@ -40,6 +40,7 @@ from wx.grid import Grid
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
     _AComponent, _AEvtHandler
 from .buttons import ImageButton
+from .events import EventResult
 from .functions import copy_text_to_clipboard, read_from_clipboard
 from .images import GuiImage
 from .menus import Links
@@ -436,9 +437,14 @@ class _PathPicker(_AComponent):
             txt_native = txt._native_widget
             txt_native.SetWindowStyleFlag(txt_native.GetWindowStyleFlag() |
                                           _wx.TE_PROCESS_ENTER)
-            # Never skipped - wx would click the default button itself
-            txt._evt_handler(_wx.EVT_TEXT_ENTER, skip=False).subscribe(
-                on_enter)
+            # The key down, not EVT_TEXT_ENTER: on wxMSW the file name
+            # completion of the field eats the Enter char, wx never sends it
+            def _enter_down(key_code):
+                if key_code in (_wx.WXK_RETURN, _wx.WXK_NUMPAD_ENTER):
+                    on_enter()
+                    return EventResult.FINISH # else wx clicks the default
+            txt._evt_handler(_wx.EVT_KEY_DOWN, lambda e: [e.GetKeyCode()]
+                             ).subscribe(_enter_down)
 
     def set_initial_directory(self, initial_dir: os.PathLike[str]) -> None:
         self._native_widget.SetInitialDirectory(os.fspath(initial_dir))
