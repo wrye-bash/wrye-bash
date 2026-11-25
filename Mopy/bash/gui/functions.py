@@ -68,9 +68,7 @@ def copy_files_to_clipboard(file_paths_to_copy):
         if not clip_opened: return
         clip_data = _wx.FileDataObject()
         for abs_path_to_copy in file_paths_to_copy:
-            ##: wx docs say this is Windows-only - test and guard with
-            # __WXMSW__ if that is the case (or find a cross-platform
-            # alternative)
+            # works on wxGTK too, whatever the wx docs say
             clip_data.AddFile(abs_path_to_copy)
         _wx.TheClipboard.SetData(clip_data)
 

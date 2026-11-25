@@ -28,9 +28,12 @@ from __future__ import annotations
 
 __author__ = u'nycz'
 
+from copy import copy
+from dataclasses import dataclass
+
 import wx as _wx
 
-from .base_components import _AComponent, scaled
+from .base_components import AObject, scaled
 
 CENTER, LEFT, RIGHT, TOP, BOTTOM = (u'center', u'left', u'right', u'top',
                                     u'bottom')
@@ -42,9 +45,6 @@ _V_ALIGNS = {None: _wx.ALIGN_CENTER_VERTICAL,
              CENTER: _wx.ALIGN_CENTER_VERTICAL,
              TOP: _wx.ALIGN_TOP,
              BOTTOM: _wx.ALIGN_BOTTOM}
-##: Figure out a nicer way to do this
-_res_parent = _AComponent._resolve
-_esc_label = _AComponent._escape
 
 class Spacer(object):
     """A fixed-size space in a layout."""
@@ -56,7 +56,8 @@ class Stretch(object):
     def __init__(self, weight=1):
         self.weight = weight
 
-class LayoutOptions(object):
+@dataclass(slots=True, eq=False)
+class LayoutOptions:
     """Container for all layouts' options. Note that some options may only
     work with certain kinds of layouts (e.g. col_span and row_span).
 
@@ -77,30 +78,24 @@ class LayoutOptions(object):
         within the space the layout has allocated for it, specified with the
         enums LEFT/CENTER/RIGHT for h_align and TOP/CENTER/BOTTOM for v_align.
         Note that these options will raise an error if expand is true, since
-        the item then takes up all of the space and has no room to move. They
-        will also raise an error for layouts that expand in the same direction
+        the item then takes up all of the space and has no room to move - they
+        do override the expand a layout gives its items by default. They will
+        also raise an error for layouts that expand in the same direction
         (e.g. v_align errors if used in a VLayout).
     col_span, row_span (int)
         The number of columns or rows this items should take up.
     """
-    __slots__ = (u'border', u'expand', u'weight', u'h_align', u'v_align',
-                 u'col_span', u'row_span')
+    border: int | None = None
+    expand: bool | None = None
+    weight: int | None = None
+    h_align: str | None = None
+    v_align: str | None = None
+    col_span: int | None = None
+    row_span: int | None = None
 
-    def __init__(self, border: int | None = None, expand: bool | None = None,
-            weight: int | None = None, h_align: str | None = None,
-            v_align: str | None = None, col_span: int | None = None,
-            row_span: int | None = None):
-        self.border = border
-        self.expand = expand
-        self.weight = weight
-        self.h_align = h_align
-        self.v_align = v_align
-        self.col_span = col_span
-        self.row_span = row_span
-        if self.expand and self.v_align:
-            raise SyntaxError(u'May not specify both expand and v_align')
-        if self.expand and self.h_align:
-            raise SyntaxError(u'May not specify both expand and h_align')
+    def __post_init__(self):
+        if self.expand and (self.h_align or self.v_align):
+            raise SyntaxError('May not specify both expand and an alignment')
 
     def layout_flags(self, use_horizontal=False, use_vertical=False):
         l_flags = _wx.ALL
@@ -112,15 +107,14 @@ class LayoutOptions(object):
         return l_flags
 
     def from_other(self, other):
-        """Use only in this module - return a copy of self, updated from other.
-        """
-        if other is self:
-            instance = self.__class__()
-        else:
-            instance = self.from_other(self) # get us a copy
-        for attr in other.__slots__: # update from other if not default (None)
-            val = getattr(other, attr)
-            if val is not None: setattr(instance, attr, val)
+        """Use only in this module - return a copy of self, updated from the
+        options other sets. Aligning an item there overrides our expand."""
+        instance = copy(self)
+        for attr in self.__slots__: # update from other if not default (None)
+            if (val := getattr(other, attr)) is not None:
+                setattr(instance, attr, val)
+        if other.expand is None and (other.h_align or other.v_align):
+            instance.expand = False
         return instance
 
 class _ALayout(object):
@@ -149,7 +143,7 @@ class _ALayout(object):
 
     def apply_to(self, parent, fit=False):
         """Apply this layout to the parent."""
-        parent = _res_parent(parent)
+        parent = AObject._resolve(parent)
         sizer = self._border_wrapper or self._sizer
         if fit:
             parent.SetSizerAndFit(sizer)
@@ -165,7 +159,7 @@ class _ALayout(object):
         elif isinstance(item, _ALayout):
             item = item._sizer
         else:
-            item = _res_parent(item)
+            item = AObject._resolve(item)
         loptions = self._default_item_loptions.from_other(options) if options \
             else self._default_item_loptions
         return item, loptions
@@ -208,9 +202,8 @@ class _ALineLayout(_ALayout):
                 self._add_spacer(self.spacing)
             lt_flags = options.layout_flags(use_horizontal=self._is_vertical,
                                             use_vertical=not self._is_vertical)
-            self._sizer.Add(item, proportion=scaled(options.weight),
-                            flag=lt_flags, border=scaled(options.border))
-            self._sizer.SetItemMinSize(item, -1, -1)
+            self._sizer.Add(item, proportion=options.weight, flag=lt_flags,
+                            border=scaled(options.border))
 
     def _add_spacer(self, length=4):
         """Add a fixed space to the layout."""
@@ -218,12 +211,12 @@ class _ALineLayout(_ALayout):
 
     def _add_stretch(self, weight=1):
         """Add a growing space to the layout."""
-        self._sizer.AddStretchSpacer(prop=scaled(weight))
+        self._sizer.AddStretchSpacer(prop=weight)
 
     def replace_component(self, old_component, new_component):
         """Replaces one component with another."""
-        self._sizer.Replace(_res_parent(old_component),
-                            _res_parent(new_component))
+        self._sizer.Replace(AObject._resolve(old_component),
+                            AObject._resolve(new_component))
 
 class _ASimpleLayout(_ALineLayout):
     def __init__(self, **kwargs):
@@ -241,15 +234,15 @@ class VLayout(_ASimpleLayout):
 class _ABoxedLayout(_ALineLayout):
     """Base class for layouts with a border and an optional title."""
     def __init__(self, parent, title: str = '', **kwargs):
-        self._static_box = _wx.StaticBox(_res_parent(parent),
-            label=_esc_label(title))
+        self._static_box = _wx.StaticBox(AObject._resolve(parent),
+            label=AObject._escape(title))
         bl_orientation = _wx.VERTICAL if self._is_vertical else _wx.HORIZONTAL
         super().__init__(_wx.StaticBoxSizer(self._static_box, bl_orientation),
             **kwargs)
 
     def set_title(self, new_title_text: str):
         """Changes this layout's title to the specified string."""
-        esc_new_tt = _esc_label(new_title_text)
+        esc_new_tt = AObject._escape(new_title_text)
         if self._static_box.GetLabel() != esc_new_tt:
             self._static_box.SetLabel(esc_new_tt)
 
@@ -304,31 +297,25 @@ class GridLayout(_ALayout):
             self.set_stretch(row=row)
 
     def add(self, col, row, item):
-        """Add an item to the specified place in the layout.
-        If there is an item there already, it will be replaced.
-        If item is None, nothing will be added."""
+        """Add an item to the specified place in the layout, which must be
+        free. If item is None, nothing will be added."""
         item, options = self._get_item_options(item)
         if item is None: return
         self._sizer.Add(item, (row, col), span=(options.row_span,
                                                 options.col_span),
                         flag=options.layout_flags(True, True),
                         border=scaled(options.border))
-        self._sizer.SetItemMinSize(item, -1, -1)
 
     def append_row(self, items):
         """Add a row of items to the bottom of the layout."""
-        row = self._sizer.GetRows()
-        for col, item in enumerate(items):
-            if item is not None:
-                self.add(col, row, item)
+        self.append_rows([items])
 
     def append_rows(self, item_rows):
         """Add multiple rows of items to the bottom of the layout."""
         row_num = self._sizer.GetRows()
         for row, items in enumerate(item_rows, row_num):
             for col, item in enumerate(items):
-                if item is not None:
-                    self.add(col, row, item)
+                self.add(col, row, item)
 
     def col_count(self):
         """Return the number of columns in the layout."""

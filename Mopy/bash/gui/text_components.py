@@ -35,7 +35,6 @@ from wx.lib.stattext import GenStaticText as _GenStaticTextWx
 from wx.lib.wordwrap import wordwrap as _wordwrap_wx
 
 from .base_components import _AComponent, scaled
-from .events import EventResult
 
 # Text Input ------------------------------------------------------------------
 class TextAlignment(Enum):
@@ -55,7 +54,6 @@ class _ATextInput(_AComponent):
     Events:
      - on_focus_lost(): Posted when this text input goes out of focus. Used in
        WB to auto-save edits.
-     - on_right_clicked(): Posted when this text input is right-clicked.
      - on_text_changed(new_text: str): Posted when the text in this text
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
@@ -105,7 +103,6 @@ class _ATextInput(_AComponent):
         # Internal use only - used to implement auto_tooltip below
         self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
         self.on_focus_lost = self._evt_handler(_wx.EVT_KILL_FOCUS)
-        self.on_right_clicked = self._evt_handler(_wx.EVT_CONTEXT_MENU)
         self.on_text_changed = self._evt_handler(_wx.EVT_TEXT,
                                             lambda event: [event.GetString()])
         # Need to delay this until now since it uses the events from above
@@ -186,44 +183,52 @@ class _ATextInput(_AComponent):
 class TextArea(_ATextInput):
     """A multi-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, *args, do_wrap=True, auto_tooltip=False,
+                 **kwargs):
         """Creates a new TextArea instance with the specified properties.
         See _ATextInput for documentation on kwargs.
 
-        :param do_wrap: Whether or not to wrap text inside this text area."""
-        wrap_style = _wx.TE_DONTWRAP if not kwargs.pop('do_wrap', True) else 0
-        super(TextArea, self).__init__(parent, *args, style=wrap_style,
-                                       **kwargs)
+        :param do_wrap: Whether or not to wrap text inside this text area.
+        :param auto_tooltip: Off by default, as the tooltip is all the text
+            once it does not fit in one line."""
+        super().__init__(parent, *args, auto_tooltip=auto_tooltip,
+            style=0 if do_wrap else _wx.TE_DONTWRAP, **kwargs)
 
 class TextField(_ATextInput):
     """A single-line text edit widget. Pressing Enter while it is focused will
-    call on_enter if specified, else send an event to the parent's OK button
-    if it exists. See the documentation for _ATextInput for a list of the
-    events this component offers."""
+    call on_enter if specified, else send an event to the OK button of its
+    window, if that has one. See the documentation for _ATextInput for a
+    list of the events this component offers."""
     def __init__(self, parent, *args, on_enter=None, **kwargs):
         """Creates a new TextField instance with the specified properties.
         See _ATextInput for documentation on kwargs."""
-        self._wx_parent = self._resolve(parent)
         self._enter_callback = on_enter
-        super(TextField, self).__init__(parent, *args, multiline=False,
+        super().__init__(parent, *args, multiline=False,
             style=_wx.TE_PROCESS_ENTER, **kwargs)
-        # Handle Enter -> OK button event to parent
-        self._on_enter = self._evt_handler(_wx.EVT_TEXT_ENTER)
+        # Handle Enter -> OK button event to parent. Never skipped - wx would
+        # click the default button itself (or beep)
+        self._on_enter = self._evt_handler(_wx.EVT_TEXT_ENTER, skip=False)
         self._on_enter.subscribe(self._handle_enter)
 
     def _handle_enter(self):
         """Internal callback. Calls on_enter if specified, else sends a click
-        event to the OK button of the parent window, if it has one."""
+        event to the OK button of our window, if it has one the user could
+        click."""
         if self._enter_callback:
             self._enter_callback()
-        elif ok_btn := self._wx_parent.FindWindowById(_wx.ID_OK):
+            return
+        # FindWindowById is static - it searches all the windows of the app
+        ok_btn = _wx.GetTopLevelParent(self._native_widget).FindWindow(
+            _wx.ID_OK)
+        if ok_btn and ok_btn.IsEnabled() and ok_btn.IsShownOnScreen():
             new_evt = _wx.PyCommandEvent(_wx.EVT_BUTTON.typeId, ok_btn.GetId())
-            # Schedule this to run after we've finished handling this event
-            _wx.CallAfter(_wx.PostEvent, ok_btn, new_evt)
-        return EventResult.FINISH
+            # Queued - it runs after we've finished handling this event
+            _wx.PostEvent(ok_btn, new_evt)
 
 class SearchBar(TextField):
-    """A variant of TextField that looks like a typical search bar."""
+    """A variant of TextField that looks like a typical search bar. Enter
+    does not click the OK button of its window, nor call on_enter - on wxMSW
+    the search control keeps the Enter to itself."""
     _native_widget: _wx.SearchCtrl
 
     def __init__(self, parent, *args, hint=_('Search'), **kwargs):
@@ -232,20 +237,15 @@ class SearchBar(TextField):
 
         :param hint: The string to show if nothing has been entered into
             the search bar. Optional, defaults to 'Search'."""
-        super().__init__(parent, *args, **kwargs)
-        ##: Not sure what the difference between SetHint and SetDescriptiveText
-        # is supposed to be, but this one works while SetHint does not...
-        self._native_widget.SetDescriptiveText(hint)
+        super().__init__(parent, *args, hint=hint, **kwargs)
+        # On wxMSW the search control keeps the Enter to itself - same for all
+        self._on_enter.unsubscribe(self._handle_enter)
         # Implement behavior for the small cancel button: show or hide based on
         # text content (present if text is present and vice versa)
         def _update_clear_btn_visibility(new_text: str):
             self._native_widget.ShowCancelButton(bool(new_text))
         self.on_text_changed.subscribe(_update_clear_btn_visibility)
-        # And implement the button's actual behavior when clicked: clear the
-        # search bar (which will then hide the button since this posts the
-        # on_text_changed event)
-        on_cancel = self._evt_handler(_wx.EVT_SEARCHCTRL_CANCEL_BTN)
-        on_cancel.subscribe(self.clear_search_bar)
+        # wx clears the text when that button is clicked, which hides it
 
     def clear_search_bar(self, keep_str=''): # use sparingly
         """Clear us if we are not contained in keep_str. Fires wx.EVT_TEXT so
@@ -304,7 +304,7 @@ class Label(_ALabel):
 # https://github.com/wxWidgets/Phoenix/blob/a3b6cfec77fcdcada6b7cb04b9e8f617525d763c/wx/lib/agw/infobar.py
 # by Andrea Gavana.
 # Modified to refactor and fit WB's code style, get rid of the background color
-# change and work around a weird bug.
+# change and not wrap to widths no character fits in.
 # BEGIN WXPYTHON-LICENSED PART ================================================
 class _WrappingStaticTextWx(_GenStaticTextWx):
     """A StaticText alternative that automatically word-wraps when the parent
@@ -319,24 +319,28 @@ class _WrappingStaticTextWx(_GenStaticTextWx):
         self.Bind(_wx.EVT_SIZE, self.OnSize)
 
     def OnSize(self, event):
+        lines_count = self.GetLabel().count('\n')
         self.Wrap(event.GetSize().width)
+        if self.GetLabel().count('\n') != lines_count:
+            # our layout gave us the height we had, get the one we need now
+            _wx.CallAfter(lambda: self and self.GetParent().Layout())
         event.Skip()
 
     def Wrap(self, new_width):
-        if new_width < 0:
+        # wordwrap breaks after every character that does not fit - as when
+        # we have no size yet - and our best size would be a tall column
+        if new_width < self.GetCharHeight():
             return
         self.Freeze()
         dc = _wx.ClientDC(self)
         dc.SetFont(self.GetFont())
-        self.SetLabel(_wordwrap_wx(self._orig_label, new_width, dc), wrapped=True)
+        super().SetLabel(_wordwrap_wx(self._orig_label, new_width, dc))
         self.Thaw()
 
-    def SetLabel(self, label, wrapped=False):
-        # wrapped is only True if called from Wrap() since it doesn't exist in
-        # the parent method's signature
-        if not wrapped:
-            self._orig_label = label
+    def SetLabel(self, label):
+        self._orig_label = label
         super().SetLabel(label)
+        self.Wrap(self.GetSize().width)
 
     def DoGetBestSize(self):
         wst_font = self.GetFont()
@@ -344,16 +348,10 @@ class _WrappingStaticTextWx(_GenStaticTextWx):
             wst_font = _wx.SystemSettings.GetFont(_wx.SYS_DEFAULT_GUI_FONT)
         dc = _wx.ClientDC(self)
         dc.SetFont(wst_font)
-        wst_label = self.GetLabel()
-        # Workaround for a really weird bug where we sometimes get a label
-        # that's got a \n before every single word character (e.g.
-        # '\nf\no\no \nb\na\nr')
-        if wst_label.startswith('\n'):
-            wst_label = ''.join(wst_label.split('\n'))
         # Draw the label's text in memory (i.e. not on a real window) and keep
         # track of how much we drew
         longest_line_width = total_drawn_height = 0
-        for label_line in wst_label.split('\n'):
+        for label_line in self.GetLabel().split('\n'):
             if label_line == '':
                 w, h = dc.GetTextExtent('W') # Empty lines have height too
             else:
@@ -365,28 +363,17 @@ class _WrappingStaticTextWx(_GenStaticTextWx):
         return wst_best
 # END WXPYTHON-LICENSED PART ==================================================
 
-class WrappingLabel(Label):
-    """Similar to Label, but automatically word-wraps when the parent window is
-    resized. After creating and using it in a layout, call auto_wrap if your
-    label's parents/sizers have proper sizes. If they don't, you will have to
-    pass in the right initial sizes manually (see settings_dialog.py for an
-    example)."""
+class _NoMnemonics:
+    """For labels that show ampersands as they are - don't double them."""
+    _escape = _unescape = staticmethod(lambda s: s)
+
+class WrappingLabel(_NoMnemonics, Label):
+    """Similar to Label, but automatically word-wraps to the width its layout
+    gives it, then has its parent lay out again for the height it needs. Call
+    update_layout on the parent after changing its text."""
     _native_widget: _WrappingStaticTextWx
 
-    @_ALabel.label_text.setter
-    def label_text(self, new_text: str):
-        # Override to word-wrap when changing text programmatically as well.
-        # Note: you *do* still have to call update_layout after doing this!
-        if self.label_text != new_text:
-            self._native_widget.SetLabel(new_text)
-            self.wrap(self.component_size[0])
-
-    def auto_wrap(self):
-        """Automatically wrap this label to fit in the client size it was
-        given."""
-        self.wrap(self._native_widget.GetClientSize().width)
-
-class HyperlinkLabel(_ALabel):
+class HyperlinkLabel(_NoMnemonics, _ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
     browser. Typically styled blue.
 
@@ -413,16 +400,6 @@ class HyperlinkLabel(_ALabel):
                 self._native_widget.GetNormalColour())
         self.on_link_clicked = self._evt_handler(_adv.EVT_HYPERLINK,
             lambda event: [event.GetURL()])
-
-    # No escaping needed for wx.adv.HyperlinkCtrl, doing this would just double
-    # all ampersands
-    @staticmethod
-    def _escape(s):
-        return s
-
-    @staticmethod
-    def _unescape(s):
-        return s
 
 # Spinner - technically text, just limited to digits --------------------------
 class Spinner(_AComponent):

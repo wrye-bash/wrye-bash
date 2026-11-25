@@ -84,8 +84,7 @@ class StartupDialogWindow(DialogWindow):
             icon_bundle=Resources.bashRed,
             style=wx.STAY_ON_TOP | wx.DIALOG_NO_PARENT)
         self.component_size = (400, 300)
-        msg_text = TextArea(self, editable=False, init_text=msg,
-                            auto_tooltip=False)
+        msg_text = TextArea(self, editable=False, init_text=msg)
         btns = [OkButton(self, btn_label=_('Continue')), CancelButton(self,
             btn_label=_('Abort'))] if is_warning else [CancelButton(self,
             btn_label=_('Quit'))]
@@ -236,7 +235,6 @@ class ListEditor(DialogWindow):
         self._listEditorData: ListEditorData = lid_data
         self._list_items = lid_data.getItemList()
         #--GUI
-        self._size_key = self._listEditorData.__class__.__name__
         super().__init__(parent, title, sizes_dict=_settings)
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items,
@@ -273,13 +271,8 @@ class ListEditor(DialogWindow):
                 (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
                 le_buttons
              ]), LayoutOptions(weight=1, expand=True))])
-        #--Done
-        if self._size_key in _settings['bash.window.sizes']:
-            layout.apply_to(self)
-            self.component_position = _settings['bash.window.sizes'][
-                self._size_key]
-        else:
-            layout.apply_to(self, fit=True)
+        #--Done - fit the contents till we have a saved size to restore
+        layout.apply_to(self, fit=self._size_key not in self._sizes_dict)
 
     #--List Commands
     def DoAdd(self):
@@ -343,12 +336,10 @@ class ListEditor(DialogWindow):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.accept_modal()
 
     def DoCancel(self):
         """Handle cancel button."""
-        _settings['bash.window.sizes'][self._size_key] = self.component_size
         self.cancel_modal()
 
 #------------------------------------------------------------------------------
@@ -432,7 +423,12 @@ class Progress(bolt.Progress):
 _depth = 0
 _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
-    """Decorator to temporarily unbind RefreshData Link.Frame callback."""
+    """Decorator to temporarily unbind RefreshData Link.Frame callback, so
+    that the frame being activated again, as a dialog func showed closes,
+    does not refresh the data. On wxMSW that activation comes while the
+    dialog closes, inside func. On wxGTK the main loop delivers it later,
+    with RefreshData bound again - there the data is refreshed once, after
+    func."""
     @wraps(func)
     def _conversation_wrapper(*args, **kwargs):
         global _depth
@@ -769,7 +765,8 @@ class UIList(PanelWin):
                 self.DoColumnMenu(0)
             elif self.context_links:
                 self.context_links.popup_menu(self, selected)
-        return EventResult.FINISH
+            return EventResult.FINISH
+        # else the event is of the rename prompt - let it show its own menu
 
     #--Callbacks --------------------------------------------------------------
     def _handle_mouse_motion(self, wrapped_evt, lb_dex_and_flags):
@@ -841,9 +838,11 @@ class UIList(PanelWin):
         if width < self._min_column_width:
             width = self._min_column_width
             self.__gList.lc_set_column_width(evt_col, self._min_column_width)
-            # if we do not veto the column will be resized anyway!
             self.__gList.resize_last_col() # resize last column to fill
             self.colWidths[colName] = width
+            # The veto is for wxMSW, that hands it to the native list -
+            # without it the column was resized anyway. wxGTK has resized it
+            # by now and ignores the veto, there the width set above holds
             return EventResult.CANCEL
         self.colWidths[colName] = width
 
@@ -905,7 +904,6 @@ class UIList(PanelWin):
         # Clicking another item to end the edit selects it before the edit
         # ends (on wxGTK at least) - remember what we are renaming
         self._renaming = self.GetSelected()
-        return EventResult.FINISH  ##: needed?
 
     @conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
@@ -1193,8 +1191,7 @@ class UIList(PanelWin):
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation
-    def dndAllow(self, event): # Disallow drag and drop by default
-        if event: event.Veto()
+    def dndAllow(self): # Disallow drag and drop by default
         return False
 
     def OnDropFiles(self, x, y, filenames): raise NotImplementedError
@@ -1302,7 +1299,7 @@ class UIList(PanelWin):
         if categories_changed:
             # Release and recreate the global menu to avoid GUI flicker
             glb_menu.release_bindings()
-            glb_menu = GlobalMenu()
+            glb_menu = GlobalMenu(Link.Frame)
             glb_menu.set_categories(tab_categories)
             Link.Frame.set_global_menu(glb_menu)
         for curr_cat in tab_categories:
@@ -1926,7 +1923,6 @@ class INIListCtrl(ListCtrl):
                 self._contents.ScrollLines(top_scroll + iniLine)
             finally:
                 self._contents.Thaw()
-        event.Skip()
 
     def fit_column_to_header(self, column):
         self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
@@ -2038,13 +2034,12 @@ class BashStatusBar(DnDStatusBar):
         self.dragStart = mouse_evnt.evt_pos[0] # a jittery click is no drag
         if wx.Platform == '__WXMSW__':
             button_link._native_widget.CaptureMouse()
-        return EventResult.FINISH # we don't skip - blocks EVT_MOTION somehow
+        # we don't skip - the native button must not see the press, it would
+        # take the mouse capture itself and click on release
+        return EventResult.FINISH
 
     def _on_drag_end_forced(self):
         self._reset_drag()
-        # NOTE: Don't Skip, otherwise wxPython treats this event as unhandled,
-        # and raises an exception.
-        return EventResult.FINISH
 
     def _on_drag_end(self, mouse_evnt):
         __, button_link = self._getButtonIndex(mouse_evnt)
@@ -2053,9 +2048,8 @@ class BashStatusBar(DnDStatusBar):
         if self.dragging != wx.NOT_FOUND:
             moved = self.moved
             self._reset_drag()
-            if moved:
-                return EventResult.FINISH
-            button_link.sb_click()
+            if not moved:
+                button_link.sb_click()
 
     def _reset_drag(self, set_cursor=True):
         self.dragging = wx.NOT_FOUND

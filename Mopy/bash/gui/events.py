@@ -43,8 +43,8 @@ There are four main differences between this system and wx's:
      swallow the event (which is rarely wanted and can easily lead to bugs).
      Nearly all of WB's need for wx event objects was just to call
      event.Skip().
-  4. Multiple listeners can subscribe to one event. wx allows just one binding,
-     and attempting to bind a new callback will remove the old binding.
+  4. Multiple listeners can subscribe to one event and all get it, in order.
+     wx only calls the last handler bound, unless that calls event.Skip().
 
 Subscribing:
   To subscribe to an event, simply call subscribe() on the EventHandler
@@ -105,7 +105,19 @@ Return Values:
        but that it shouldn't be propagated to the next listener, if one exists.
     3. EventResult.CANCEL: Indicates that the event should not be allowed to
        execute. Only events that explicitly mention it in their documentation
-       can be canceled, all others will raise a RuntimeError instead."""
+       can be canceled, all others will raise a RuntimeError instead.
+  An event that no listener finished or canceled is passed on to wx (we Skip
+  it), to handle it natively. Some must not be: a paint handler replaces the
+  native one, wx asserts on a mouse capture lost event that nobody processed
+  and presses the default button itself on an Enter we already acted on.
+  Create the handlers of those with skip=False - that is up to the event, not
+  to each of its listeners.
+  Return FINISH only when the listener did what wx and the control would do,
+  or to prevent that: a finished click or key never reaches the control (no
+  focus, no selection, no typing), wx's own handlers do not run (a finished
+  OK click does not close its dialog) and the parents do not get the event -
+  clicks on controls, menu, notebook and context menu events travel up to
+  them otherwise."""
 from __future__ import annotations
 
 __author__ = 'Infernio'
@@ -153,7 +165,7 @@ class EventHandler(object):
     """This class implements the actual event processing, catching native wx
     events, applying processors to them and posting the results to all relevant
     listeners."""
-    def __init__(self, wx_owner, wx_event_id, arg_processor):
+    def __init__(self, wx_owner, wx_event_id, arg_processor, skip=True):
         """Creates a new EventHandler wrapping the specified wx event.
 
         :param wx_owner: The wx object that the event is based on. This is what
@@ -161,8 +173,11 @@ class EventHandler(object):
         :param wx_event_id: The wx ID of the event in question. For example,
                             wx.EVT_TEXT.
         :param arg_processor: The processor that should be applied to the event
-                              object before passing it on to the listeners."""
+                              object before passing it on to the listeners.
+        :param skip: Whether to pass the event on to wx, unless a listener
+                     finishes or cancels it."""
         self._arg_processor = arg_processor
+        self._skip = skip
         self._listeners = []
         self._wx_owner = wx_owner
         self._wx_event_id = wx_event_id
@@ -177,7 +192,7 @@ class EventHandler(object):
 
         :param event: The event that occurred."""
         listener_args = self._arg_processor(event)
-        for listener in self._listeners:
+        for listener in [*self._listeners]: # they may (un)subscribe meanwhile
             result = listener(*listener_args)
             # result will be None if method didn't return anything
             if result is None or result is EventResult.CONTINUE:
@@ -194,8 +209,8 @@ class EventHandler(object):
                         f'{event.__class__!r}) that cannot be canceled.')
             else:raise RuntimeError(f'Incorrect return value ({result!r}) for '
                                     f'EventHandler listener.')
-        # Need to propagate it up the wx chain
-        event.Skip()
+        if self._skip: # Need to propagate it up the wx chain
+            event.Skip()
 
     def subscribe(self, listener, *, _pos=None):
         """Subscribes the specified listener to this event handler. The order
@@ -246,7 +261,8 @@ class EventHandler(object):
             self._wx_owner.Bind(self._wx_event_id, self._post)
             self._is_bound = True
         elif not self._listeners and self._is_bound:
-            self._wx_owner.Unbind(self._wx_event_id)
+            # pass our handler, else wx drops the last one bound to the event
+            self._wx_owner.Unbind(self._wx_event_id, handler=self._post)
             self._is_bound = False
 
     def __repr__(self):

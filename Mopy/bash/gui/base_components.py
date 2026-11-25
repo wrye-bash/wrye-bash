@@ -27,7 +27,6 @@ from __future__ import annotations
 __author__ = 'nycz, Infernio, Utumno'
 
 import functools
-import platform
 import textwrap
 from typing import Self, get_type_hints
 
@@ -40,14 +39,10 @@ from ..exception import GuiError
 # Utilities -------------------------------------------------------------------
 @functools.cache
 def _csf() -> float:
-    """Returns the content scale factor (CSF) needed for high DPI displays."""
-    if platform.system() != 'Darwin': ##: Linux? os_name == 'nt' if so
-        ##: This should really be GetContentScaleFactor(), but that always
-        # returns 1.0 for me (on wxPython 4.2.0), so use a workaround
-        scaled_size = _wx.Window().FromDIP((16, 16))
-        return scaled_size[0] / 16
-    else:
-        return 1.0 # Everything scales automatically on macOS
+    """Returns the content scale factor (CSF) needed for high DPI displays -
+    1 on wxGTK and wxOSX, whose pixels are DPI independent ones already. Not
+    GetContentScaleFactor, that's the reverse: always 1 on wxMSW."""
+    return _wx.Window().FromDIP((16, 16))[0] / 16
 
 def scaled(unscaled_size: int | float):
     scaled = unscaled_size * _csf()
@@ -59,6 +54,13 @@ def wrapped_tooltip(tooltip_text: str, wrap_width: int = 50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)
     return _wx.ToolTip(tooltip_text)
+
+def _style_font(font_: _wx.Font, strong=False, slant=False, underline=False):
+    """Set the weight, style and underlining of font_ and return it."""
+    font_.SetWeight(_wx.FONTWEIGHT_BOLD if strong else _wx.FONTWEIGHT_NORMAL)
+    font_.SetStyle(_wx.FONTSTYLE_SLANT if slant else _wx.FONTSTYLE_NORMAL)
+    font_.SetUnderlined(underline)
+    return font_
 
 class Color:
     """A simple RGB(A) color class used to avoid having to return wx.Colour
@@ -128,7 +130,7 @@ class AObject:
     def __init__(self, parent=_no_parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
-        wx_widget_type = get_type_hints(self.__class__)['_native_widget']
+        wx_widget_type = self._native_type()
         if parent is not _no_parent:
             args = self._resolve(parent), *args
         widget = wx_widget_type(*args, **kwargs)
@@ -138,13 +140,26 @@ class AObject:
             self._native_widget = widget
 
     @classmethod
+    def _native_type(cls):
+        """Return the type of the native widget we wrap, as _native_widget is
+        annotated. Evaluating the hints is slow - once for each class that
+        has the annotation, not for all that inherit it."""
+        for base in cls.__mro__:
+            if '_native_widget' in getattr(base, '__annotations__', ()):
+                break
+        wx_type = base.__dict__.get('_wx_type')
+        if wx_type is None:
+            wx_type = base._wx_type = get_type_hints(base)['_native_widget']
+        return wx_type
+
+    @classmethod
     def _wrap_object(cls, native_widget, type_check=True) -> Self:
         """Wraps an existing wx object with this class.
 
         Note: if any additional initialization of the _AObject is required, you
         must do it yourself."""
         if type_check:
-            wx_widget_type = get_type_hints(cls)['_native_widget']
+            wx_widget_type = cls._native_type()
             if not isinstance(native_widget, wx_widget_type):
                 raise TypeError(f'Cannot wrap {native_widget!r} with {cls}, '
                                 f'expected {wx_widget_type}')
@@ -197,9 +212,9 @@ class _AEvtHandler(AObject):
     """Wrap an EvtHandler instance."""
     _native_widget: _wx.EvtHandler
 
-    def _evt_handler(self, evt, arg_proc=null_processor):
+    def _evt_handler(self, evt, arg_proc=null_processor, skip=True):
         """Register an EventHandler on _native_widget"""
-        return EventHandler(self._native_widget, evt, arg_proc)
+        return EventHandler(self._native_widget, evt, arg_proc, skip)
 
     def _make_custom_event(self, callback):
         """Creates a wrapper around a custom event.
@@ -214,8 +229,9 @@ class _AEvtHandler(AObject):
             callback(**received_kwargs)
         self._native_widget.Bind(binder, _receiver)
         def _sender(**kwargs):
-            _wx.PostEvent(self._native_widget, event_cls(**kwargs,
-                _kwargs=list(kwargs))) # So that we can access them again
+            if self._native_widget: # else destroyed - a thread may call this
+                _wx.PostEvent(self._native_widget, event_cls(**kwargs,
+                    _kwargs=list(kwargs))) # So that we can access them again
         return _sender
 
     def pause_drawing(self) -> _ACFrozen:
@@ -471,10 +487,6 @@ class _AComponent(_AEvtHandler):
         """The inverse of to_absolute_position."""
         return tuple(self._native_widget.ScreenToClient(absolute_pos))
 
-    # TODO(inf) de-wx! Menu should become a wrapped component as well
-    def show_popup_menu(self, menu):
-        self._native_widget.PopupMenu(menu)
-
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
     """An _AComponent that handles mouse events.
@@ -485,14 +497,11 @@ class WithMouseEvents(_AComponent):
         - on_mouse_left_dclick(hit_test: tuple[int]): left mouse doubleclick.
         - on_mouse_left_down(wrapped_evt: _WrapMouseEvt, lb_dex: int): left
         mouse click.
-        - on_mouse_right_up(hit_test: tuple[int]): right mouse button released.
-        - on_mouse_right_down(position: tuple[int]): right mouse button click.
         - on_mouse_middle_up(): middle mouse button released.
       - on_mouse_motion(wrapped_evt: _WrapMouseEvt, hit_test: int): mouse moved
       - on_mouse_leaving(): mouse is leaving the window
     """
     bind_lclick_double = bind_lclick_up = bind_lclick_down = False
-    bind_rclick_up = bind_rclick_down = False
     bind_motion = bind_mouse_leaving = False
     bind_middle_up = False
 
@@ -534,12 +543,6 @@ class WithMouseEvents(_AComponent):
         if self.__class__.bind_lclick_up:
             self.on_mouse_left_up = self._evt_handler(_wx.EVT_LEFT_UP,
                 lambda event: [self._WrapMouseEvt(event)])
-        if self.__class__.bind_rclick_up:
-            self.on_mouse_right_up = self._evt_handler(_wx.EVT_RIGHT_UP,
-                                                       lb_hit_test)
-        if self.__class__.bind_rclick_down:
-            self.on_mouse_right_down = self._evt_handler(_wx.EVT_RIGHT_DOWN,
-                lambda event: [event.GetPosition()])
         if self.__class__.bind_motion:
             self.on_mouse_motion = self._evt_handler(_wx.EVT_MOTION,
                 lambda event: [self._WrapMouseEvt(event),
@@ -559,12 +562,12 @@ class WithCharEvents(_AComponent):
         letter is pressed by using this. Note that you have to return
         EventResult.FINISH if you override behavior for a particular key code,
         otherwise the OS behavior will also be executed.
-      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): Posted when
-        a key is starting to be released. OS handlers for this key have run if
-        they weren't overriden by an on_key_down subscription."""
+      - on_key_up(wrapped_evt: _WrapKeyEvt): Posted when a key is starting to
+        be released. OS handlers for this key have run if they weren't
+        overriden by an on_key_down subscription."""
     class _WrapKeyEvt:
-        def __init__(self, mouse_evt: _wx.KeyEvent):
-            self.__key_evt = mouse_evt
+        def __init__(self, key_evt: _wx.KeyEvent):
+            self.__key_evt = key_evt
 
         @property
         def key_code(self):
@@ -592,7 +595,7 @@ class WithDragEvents(WithMouseEvents):
     """An _AComponent that handles drag events for the mouse - alpha.
 
     Drag events.
-      - on_mouse_capture_lost(wrapped_evt: _WrapMouseEvt) - only on __WXMSW__.
+      - on_mouse_capture_lost() - only on __WXMSW__, never passed on to wx.
     """
     bind_lclick_up = bind_lclick_down = bind_motion = True
 
@@ -603,7 +606,7 @@ class WithDragEvents(WithMouseEvents):
         if on_drag_end: self.on_mouse_left_up.subscribe(on_drag_end)
         if on_drag_end_forced and _wx.Platform == '__WXMSW__':
             self.on_mouse_capture_lost = self._evt_handler(
-                _wx.EVT_MOUSE_CAPTURE_LOST)
+                _wx.EVT_MOUSE_CAPTURE_LOST, skip=False) # wx asserts if we do
             self.on_mouse_capture_lost.subscribe(on_drag_end_forced)
         if on_drag: self.on_mouse_motion.subscribe(on_drag)
 

@@ -83,7 +83,7 @@ class ImportFaceDialog(DialogWindow):
         #--Other
         importButton = OkButton(self, btn_label=_('Import'),
                                 on_click=self.DoImport)
-        self.picture = Picture(self, 350, 210, scaling=2) ##: unused
+        self.picture = Picture(self, 350, 210)
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
             ((self.listBox, LayoutOptions(row_span=2, expand=True)),
@@ -118,7 +118,7 @@ class ImportFaceDialog(DialogWindow):
         selections = self.listBox.lb_get_selections()
         if not selections:
             bell()
-            return
+            return EventResult.FINISH # leave the dialog open
         itemDex = selections[0]
         item = self.list_items[itemDex]
         #--Do import
@@ -225,7 +225,7 @@ class CreateNewProject(DialogWindow):
             showError(self, _(
                 'There is already a project with that name!') + '\n' + _(
                 'Pick a different name for the project and try again.'))
-            return
+            return EventResult.FINISH # leave the dialog open
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
         with TempDir(bolt_path=True) as tmp_dir:
@@ -850,13 +850,11 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
         super().__init__(parent, stay_over_parent=True,
             sizes_dict=bass.settings, icon_bundle=balt.Resources.bashBlue)
         ch_layout = VLayout(border=4, spacing=6, item_expand=True)
-        labels_to_wrap = []
         for highlight_data in highlight_items:
             # First add the description for the highlighting, if any
             if highlight_data.highlight_desc:
-                desc_label = WrappingLabel(self, highlight_data.highlight_desc)
-                ch_layout.add(desc_label)
-                labels_to_wrap.append(desc_label)
+                ch_layout.add(WrappingLabel(self,
+                                            highlight_data.highlight_desc))
             node_type = _mk_node_class(highlight_data.parent_tab_key)
             # Then create the actual tree listing the highlightings, which will
             # take up most of the space
@@ -883,9 +881,7 @@ class _AItemHighlightDialog(MaybeModalDialogWindow):
             CancelButton(self) if add_cancel_btn else None,
         ]))
         ch_layout.apply_to(self)
-        for wl in labels_to_wrap:
-            wl.auto_wrap()
-        self.update_layout()
+        self.update_layout() # sizes our WrappingLabels, so they wrap
 
     @classmethod
     def make_highlight_entry(cls, highlight_desc: str,
@@ -1046,7 +1042,7 @@ class ImportOrderDialog(DialogWindow, APackageOrderParser):
     def _handle_ok(self):
         """Internal callback, performs the actual reordering etc."""
         imp_path = self._import_target_field.text_content
-        if not imp_path: return
+        if not imp_path: return EventResult.FINISH # leave the dialog open
         self.first_line = True
         self._partial_package_order = []
         try:
@@ -1055,7 +1051,7 @@ class ImportOrderDialog(DialogWindow, APackageOrderParser):
             balt.showError(self, _('The selected file is not a valid package '
                                    'order CSV export.'),
                 title=_('Import Order - Invalid CSV'))
-            return
+            return EventResult.FINISH # leave the dialog open
         bain_idata = self._bain_parent.data_store
         reorder_err = bain_idata.reorder_packages(self._partial_package_order)
         bain_idata.refresh_ns()

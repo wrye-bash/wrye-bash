@@ -482,7 +482,6 @@ class MasterList(_ModsUIList):
         if sel_curr_name not in bosh.modInfos:
             return # Master that is not installed was clicked
         balt.Link.Frame.notebook.jump_to('Mods', sel_curr_name)
-        return EventResult.FINISH
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -608,7 +607,6 @@ class MasterList(_ModsUIList):
                 masterInfo.old_name] = masterInfo.curr_name
             # populate, refresh must be called last
             self.PopulateItem(evt_index, **self._cache_rui_structs())
-            return EventResult.FINISH ##: needed?
         elif evt_label == u'':
             return EventResult.CANCEL
         else:
@@ -718,7 +716,6 @@ class INIList(UIList):
         tweak_clicked = self._get_info_clicked(lb_dex_and_flags)
         if tweak_clicked and not tweak_clicked.is_default_tweak:
             self.OpenSelected(selected=[tweak_clicked.fn_key])
-        return EventResult.FINISH
 
     def _handle_key_down(self, wrapped_evt):
         kcode = wrapped_evt.key_code
@@ -948,7 +945,7 @@ class ModList(_ModsUIList):
     def OnDropIndexes(self, indexes, newIndex):
         self._drop_dexes([[indexes[0], indexes[-1], newIndex]])
 
-    def dndAllow(self, event):
+    def dndAllow(self):
         msg = u''
         continue_key = u'bash.mods.dnd.column.continue'
         if self.sort_column not in self._dndColumns:
@@ -962,7 +959,7 @@ class ModList(_ModsUIList):
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key, show_cancel=False)
-            return super(ModList, self).dndAllow(event) # disallow
+            return super(ModList, self).dndAllow() # disallow
         return True
 
     #--Populate Item
@@ -1024,9 +1021,10 @@ class ModList(_ModsUIList):
             self._toggle_active_state(*toggle_target)
         elif wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             # Ctrl+Up/Ctrl+Down - move plugin up/down load order
-            if not self.dndAllow(event=None):
-                # Veto the event so Up/Down arrows do not move the selection
-                return EventResult.CANCEL
+            if not self.dndAllow():
+                # Finish the event (a key event has no veto) so Up/Down arrows
+                # do not move the selection
+                return EventResult.FINISH
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self._get_selected()
             previous = -1
@@ -1042,15 +1040,13 @@ class ModList(_ModsUIList):
                 newIndex := (first := c[0]) + moveMod) >= 0 and (
                     (last := c[-1]) + moveMod) < self.item_count]
             self._drop_dexes(chunks)
-        elif wrapped_evt.is_cmd_down:
+        elif wrapped_evt.is_cmd_down and kcode in (ord('Z'), ord('Y')):
             # Ctrl+Y/Ctrl+Shift+Z redo last load order or active plugins change
             # Ctrl+Z - undo last load order or active plugins change
-            redo = wrapped_evt.is_shift_down if kcode == ord('Z') else \
-                (kcode == ord('Y') or None)
-            if redo is not None:
-                lordata = self.data_store.wip_lo_undo_redo_load_order(redo)
-                self.propagate_refresh(lordata) # no additions or removals
-        else:
+            redo = wrapped_evt.is_shift_down if kcode == ord('Z') else True
+            lordata = self.data_store.wip_lo_undo_redo_load_order(redo)
+            self.propagate_refresh(lordata) # no additions or removals
+        else: # the other Ctrl+keys too - Ctrl+Tab, the ones of the list
             return super()._handle_key_down(wrapped_evt)
         # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
@@ -1359,8 +1355,7 @@ class ModDetails(_ModsSavesDetails):
         #--Description
         self._max_desc_len = bush.game.Esp.max_desc_length
         # Same note about max_length applies here too
-        self._desc_area = TextArea(top, max_length=self._max_desc_len,
-            auto_tooltip=False)
+        self._desc_area = TextArea(top, max_length=self._max_desc_len)
         self._desc_area.on_text_changed.subscribe(self._on_desc_typed)
         self._desc_area.on_focus_lost.subscribe(self._on_desc_finished)
         self._desc_label = Label(top, '')
@@ -1371,7 +1366,9 @@ class ModDetails(_ModsSavesDetails):
             bind_lclick_down = True
         self._add_tag_btn = _ExPureImageButton(self._bottom_low_panel,
             get_image('plus.16'),
-            btn_tooltip=_('Add bash tags to this plugin.'))
+            btn_tooltip=_('Add bash tags to this plugin.'),
+            # the mouse never clicks it, we finish its left down - the keyboard
+            on_click=self._popup_add_tags)
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
         self._rem_tag_btn = PureImageButton(self._bottom_low_panel,
             get_image('minus.16'),
@@ -1379,7 +1376,7 @@ class ModDetails(_ModsSavesDetails):
             on_click=self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
-        self.gTags.on_mouse_right_up.subscribe(self._popup_misc_tags)
+        self.gTags.on_context.subscribe(self._popup_misc_tags)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(items=[Label(top, _('File:')), Stretch(), self._version]),
@@ -1596,8 +1593,9 @@ class ModDetails(_ModsSavesDetails):
 
     #--Bash Tags
     @_check_displayed
-    def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
-        """Show bash tag selection menu."""
+    def _popup_add_tags(self, wrapped_evt=None, _lb_dex_and_flags=None):
+        """Show bash tag selection menu - at the mouse or, when the button is
+        clicked from the keyboard, at the button."""
         _mod_details = self
         mod_info: bosh.ModInfo = self.file_info
         app_tags = mod_info.getBashTags()
@@ -1616,8 +1614,8 @@ class ModDetails(_ModsSavesDetails):
             help_text=_('Check a tag to add it to the plugin.'),
             aa_btn_tooltip=_(u'Add all shown tags to the plugin.'),
             ra_btn_tooltip=_(u'Remove all shown tags from the plugin.'))
-        mouse_pos = self._add_tag_btn.to_absolute_position(wrapped_evt.evt_pos)
-        bt_popup.show_popup(mouse_pos)
+        bt_popup.show_popup(self._add_tag_btn.to_absolute_position(
+            wrapped_evt.evt_pos if wrapped_evt else (0, 0)))
         # Returning FINISH is important here because the OS handler will
         # otherwise take focus away from the popup, which causes it to close
         # immediately (since it's transient)
@@ -2381,13 +2379,13 @@ class InstallersList(UIList):
         self.panel.frameActivated = True
         self.panel.ShowPanel(focus_list=True)
 
-    def dndAllow(self, event):
+    def dndAllow(self):
         if not self.sort_column in self._dndColumns:
             msg = _(u"Drag and drop in the Installer's list is only allowed "
                     u'when the list is sorted by install order')
             balt.askContinue(self, msg, 'bash.installers.dnd.column.continue',
                 show_cancel=False)
-            return super(InstallersList, self).dndAllow(event) # disallow
+            return super(InstallersList, self).dndAllow() # disallow
         return True
 
     def _handle_key_down(self, wrapped_evt):
@@ -2455,7 +2453,7 @@ class InstallersList(UIList):
                 CreateNewProject.display_dialog(self)
             return EventResult.FINISH
         else:
-            super()._handle_key_up(wrapped_evt)
+            return super()._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
@@ -2541,7 +2539,8 @@ class InstallersDetails(_SashDetailsPanel):
         top, bottom = self.left, self.right
         commentsPanel = PanelWin(bottom)
         #--Package
-        self.gPackage = TextArea(top, editable=False, no_border=True)
+        self.gPackage = TextArea(top, editable=False, no_border=True,
+                                 auto_tooltip=True) # the name, if too long
         #--Info Tabs
         self.gNotebook, self.checkListSplitter = self.subSplitter.make_panes(
             first_pane=TabbedPanel(self.subSplitter, multiline=True),
@@ -2558,8 +2557,7 @@ class InstallersDetails(_SashDetailsPanel):
             (u'gSkipped', _(u'Skipped')),
             )
         for cmp_name, page_title in infoTitles:
-            gPage = TextArea(self.gNotebook, editable=False,
-                             auto_tooltip=False, do_wrap=False)
+            gPage = TextArea(self.gNotebook, editable=False, do_wrap=False)
             gPage.set_component_name(cmp_name)
             self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
@@ -2570,7 +2568,7 @@ class InstallersDetails(_SashDetailsPanel):
         #--Sub-Installers
         self.gSubList = CheckListBox(self.sp_panel, isExtended=True)
         self.gSubList.on_box_checked.subscribe(self._check_subitem)
-        self.gSubList.on_mouse_right_up.subscribe(self._sub_selection_menu)
+        self.gSubList.on_context.subscribe(self._sub_selection_menu)
         # FOMOD/Sub-Packages radio buttons
         self.fomod_btn = RadioButton(self.sp_panel, 'FOMOD')
         self.fomod_btn.tooltip = _(u'Disable the regular BAIN sub-packages '
@@ -2589,9 +2587,9 @@ class InstallersDetails(_SashDetailsPanel):
         self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
             self._on_plugin_filter_dclick)
-        self.gEspmList.on_mouse_right_up.subscribe(self._selection_menu)
+        self.gEspmList.on_context.subscribe(self._selection_menu)
         #--Comments
-        self.gComments = TextArea(commentsPanel, auto_tooltip=False)
+        self.gComments = TextArea(commentsPanel)
         #--Layout
         VLayout(items=[
             self.fomod_btn, self.sp_btn, self.sp_label,
@@ -2615,10 +2613,8 @@ class InstallersDetails(_SashDetailsPanel):
     def _get_sub_splitter(self):
         return Splitter(self.left, sash_gravity=0.5)
 
-    def OnShowInfoPage(self, event_id, selected_index):
+    def OnShowInfoPage(self, selected_index):
         """A specific info page has been selected."""
-        if self.gNotebook.stop_event(event_id):
-            return EventResult.FINISH
         gPage, initialized = self.infoPages[selected_index]
         if self.detail_fn and not initialized:
             self.RefreshInfoPage(selected_index, self.file_info)
@@ -2834,7 +2830,6 @@ class InstallersDetails(_SashDetailsPanel):
         selected_name = self.get_espm(selected_index)
         if selected_name not in bosh.modInfos: return
         balt.Link.Frame.notebook.jump_to('Mods', selected_name)
-        return EventResult.FINISH
 
     def set_subpackage_checkmarks(self, checked):
         """Checks or unchecks all sub-package checkmarks and propagates that
@@ -2938,8 +2933,13 @@ class InstallersPanel(BashTab):
                   focus_list=False, **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
-        if (not settings[u'bash.installers.enabled'] or self.refreshing
-                or self._user_cancelled):
+        if not settings['bash.installers.enabled']:
+            self._user_cancelled = False
+            # nothing to refresh, but the status bar and menus are ours now
+            Link.Frame.set_status_info(self.sb_count_str(), 2, show_panel=True)
+            self.uiList.setup_global_menu()
+            return
+        if self.refreshing or self._user_cancelled:
             self._user_cancelled = False
             return
         try:
@@ -3071,7 +3071,6 @@ class ScreensList(UIList):
         hitItem = self._getItemClicked(lb_dex_and_flags)
         if hitItem:
             self.OpenSelected(selected=[hitItem])
-        return EventResult.FINISH
 
     def _info_to_name(self, selected, *args):
         root, numStr, num, digits = args
@@ -3340,20 +3339,27 @@ class BashNotebook(DnDNotebook):
         if bass.settings['bash.tabs.order'][tab_key]:
             # It was enabled, disable it.
             pageTitle = {widg.GetPageText(i): i for i in range(page_count)}
-            iMods = pageTitle[TabInfo.MODS.tab_title]  # should always exist!
-            iInstallers = pageTitle.get(TabInfo.INSTALLERS.tab_title)
             iDelete = pageTitle[btab.tab_title]
-            if iDelete == widg.GetSelection():
-                # We're deleting the current page...
-                if ((iDelete == 0 and iInstallers == 1) or (
-                        iDelete - 1 == iInstallers)):
-                    # The auto-page change will change to the 'Installers' tab.
-                    # Change to the 'Mods' tab instead.
-                    widg.SetSelection(iMods)
             btab.tab_panel.ClosePanel()  ##: note the panel remains in memory
             page = widg.GetPage(iDelete)
-            widg.RemovePage(iDelete)
+            was_selected = iDelete == widg.GetSelection()
+            # Removing the selected page selects another one - wxGTK posts the
+            # page change while the removed page is still in wx's list, so
+            # currentPage would be the removed one (unless it was the last),
+            # wxMSW posts it once the page is gone, wxOSX does not post it
+            with self.on_nb_page_change.pause_subscription(self.OnShowPage):
+                widg.RemovePage(iDelete)
+                # wxMSW and wxGTK select the next page (the previous one if
+                # the removed was the last), wxOSX the previous one (the next
+                # one if it was the first) - if it's the 'Installers' tab,
+                # change to the 'Mods' tab instead, not to refresh Installers
+                if was_selected and (self.currentPage is
+                                     TabInfo.INSTALLERS.tab_panel):
+                    widg.SetSelection(widg.FindPage(
+                        self._resolve(TabInfo.MODS.tab_panel)))
             page.Show(False)
+            if was_selected: # show the page wx selected instead
+                self.currentPage.ShowPanel()
         else:
             # It was disabled, enable it
             insertAt = 0
@@ -3362,6 +3368,9 @@ class BashNotebook(DnDNotebook):
                 insertAt += k_enabled
             if not (pan := btab.tab_panel):
                 btab.tab_panel = pan = btab.panel_class(self)
+            # we hid it above - wxGTK leaves out the tab of a hidden page and
+            # won't select it, wxMSW and wxOSX hide the pages they insert
+            pan.visible = True
             if insertAt > page_count:
                 self.add_page(pan, btab.tab_title)
             else:
@@ -3413,10 +3422,8 @@ class BashNotebook(DnDNotebook):
         settings[u'bash.tabs.order'] = OrderedDict(
             (k, settings[u'bash.tabs.order'][k]) for k in newOrder)
 
-    def OnShowPage(self, event_id, selected_index):
+    def OnShowPage(self, selected_index):
         """Call panel's ShowPanel() on the current panel."""
-        if self.stop_event(event_id):
-            return EventResult.FINISH
         self.currentPage.ShowPanel()
 
     def next_tab(self, forward):
@@ -3451,7 +3458,7 @@ class BashFrame(WindowFrame):
         status_bar = self.statusBar = BashStatusBar(self)
         self._native_widget.SetStatusBar(self._resolve(status_bar))
         self.global_menu = None
-        self.set_global_menu(GlobalMenu())
+        self.set_global_menu(GlobalMenu(self))
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = u''
@@ -3591,7 +3598,6 @@ class BashFrame(WindowFrame):
         self.warn_game_ini()
         #--Done (end recursion blocker)
         self.inRefreshData = False
-        return EventResult.FINISH
 
     @balt.conversation
     def _warn_imported_launchers(self): ##:(734:570)
@@ -3680,7 +3686,7 @@ class BashFrame(WindowFrame):
     def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""
         try:
-            # Save sizes here, in the finally clause position is not saved - todo PY3: test if needed
+            # Save sizes here, in the finally clause position is not saved
             super(BashFrame, self).on_closing(destroy=False)
             self.bind_refresh(bind=False)
             self.SaveSettings(destroy=True)

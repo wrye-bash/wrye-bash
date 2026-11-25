@@ -72,8 +72,7 @@ class ValidatorPopup(DialogWindow):
         copy_log_btn.tooltip = _('Copies the contents of the error log to the '
                                  'clipboard.')
         self._error_log = TextArea(self,
-            self._warning_msg + '\n'.join(error_lines), auto_tooltip=False,
-            editable=False)
+            self._warning_msg + '\n'.join(error_lines), editable=False)
         continue_btn = OkButton(self, _('Continue Anyway'))
         continue_btn.tooltip = _(
             'If you continue regardless, Wrye Bash may fail to install the '
@@ -129,10 +128,6 @@ class InstallerFomod(WizardDialog):
                 'fomod_title': self.fomod_parser.fomod_name})
         self._is_arch = target_installer.is_archive
         self.fm_ret = FomodInstallInfo()
-
-    def save_size(self): ##: needed?
-        # Otherwise, regular resize, save the size if we're not maximized
-        self.on_closing(destroy=False)
 
     def _has_next_page(self):
         return self.fomod_parser.has_next()
@@ -243,7 +238,7 @@ class PageSelect(PageInstaller):
         self._bmp_item.on_mouse_left_dclick.subscribe(self._open_image)
         # Shows required/recommended/etc. status of hovered-over option
         self._option_type_label = Label(self, u'')
-        self._text_item = TextArea(self, editable=False, auto_tooltip=False)
+        self._text_item = TextArea(self, editable=False)
         # Create links to facilitate mass (de)selection
         self._group_links = Links()
         self._group_links.append_link(_Group_SelectAll())
@@ -480,8 +475,7 @@ class PageFinish(PageInstaller):
             installer_output = self._page_parent.fomod_parser.get_fomod_files()
             # Create the two alternative output displays and fill them with
             # data from the FOMOD parser
-            self._output_text = TextArea(
-                self, editable=False, auto_tooltip=False,
+            self._output_text = TextArea(self, editable=False,
                 init_text=self.display_files(installer_output))
             sorted_output = dict_sort(installer_output,
                 key_f=lambda k: installer_output[k].lower())  # sort by source

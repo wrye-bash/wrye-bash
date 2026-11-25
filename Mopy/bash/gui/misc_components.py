@@ -47,31 +47,21 @@ from .menus import Links
 from .text_components import TextField
 from ..bolt import Path, dict_sort
 
-class Font(_wx.Font):
-    @staticmethod
-    def Style(font_: _wx.Font, strong=False, slant=False, underline=False):
-        if strong: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
-        else: font_.SetWeight(_wx.FONTWEIGHT_NORMAL)
-        if slant: font_.SetStyle(_wx.FONTSTYLE_SLANT)
-        else: font_.SetStyle(_wx.FONTSTYLE_NORMAL)
-        font_.SetUnderlined(underline)
-        return font_
-
 # Pictures --------------------------------------------------------------------
 class Picture(_AComponent):
     """Picture panel."""
 
-    def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
-                 style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
-        super(Picture, self).__init__(parent, size=(width, height),
-                                      style=style)
+    def __init__(self, parent, width, height, style=_wx.BORDER_SUNKEN,
+                 background=_wx.MEDIUM_GREY_BRUSH):
+        super().__init__(parent, style=style)
+        # wx makes a size passed on creation the minimum size of the window
+        self._native_widget.SetSize((width, height))
         self._native_widget.SetBackgroundStyle(_wx.BG_STYLE_CUSTOM)
         self._gui_bitmap = None
         self.background = self._get_brush(
             background or self._native_widget.GetBackgroundColour())
-        #self.SetSizeHints(width,height,width,height)
         #--Events
-        self._on_paint = self._evt_handler(_wx.EVT_PAINT)
+        self._on_paint = self._evt_handler(_wx.EVT_PAINT, skip=False)
         self._on_paint.subscribe(self._handle_paint)
         self._on_size = self._evt_handler(_wx.EVT_SIZE)
         self._on_size.subscribe(self._handle_resize)
@@ -107,32 +97,34 @@ class Picture(_AComponent):
         self._handle_resize()
         return self._gui_bitmap
 
-    def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
-        x, y = self.scaled_size()
-        if x <= 0 or y <= 0: return
+    def _handle_resize(self):
+        """Redraw the buffer we paint, which keeps resizing free of flicker:
+        our bitmap scaled to fit, on our background. Scaling goes through a
+        wx.Image, the one that can be resampled - as in wx.Bitmap.Rescale,
+        that picks the nearest pixel though."""
+        # the buffer is painted on our client area, inside our border
+        x, y = (max(1, s) for s in self._native_widget.GetClientSize())
         self.buffer = _wx.Bitmap(x,y)
-        dc = _wx.MemoryDC()
-        dc.SelectObject(self.buffer)
+        dc = _wx.MemoryDC(self.buffer)
         # Draw
         dc.SetBackground(self.background)
         dc.Clear()
         if self._gui_bitmap is not None:
             old_x,old_y = self._gui_bitmap.GetSize()
-            scale = min(float(x)/old_x, float(y)/old_y)
-            new_x = old_x * scale
-            new_y = old_y * scale
+            scale = min(x / old_x, y / old_y)
+            new_x = max(1, int(old_x * scale)) # wx asserts on rescaling to 0
+            new_y = max(1, int(old_y * scale))
             pos_x = max(0,x-new_x)/2
             pos_y = max(0,y-new_y)/2
             image = self._gui_bitmap.ConvertToImage()
-            image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
+            image.Rescale(new_x, new_y, _wx.IMAGE_QUALITY_HIGH)
             dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc
         self._native_widget.Refresh()
         self._native_widget.Update()
 
     def _handle_paint(self):
-        dc = _wx.BufferedPaintDC(self._native_widget, self.buffer)
-        return EventResult.FINISH
+        _wx.BufferedPaintDC(self._native_widget, self.buffer) # paints it
 
 class PictureWithCursor(Picture, WithMouseEvents):
     bind_lclick_double = bind_middle_up = True
@@ -187,7 +179,7 @@ class Table(WithCharEvents):
                in table_data.values()):
             raise SyntaxError(u'Table columns must all have the same size')
         if not all(table_data):
-            raise SyntaxError(u'Table rows must be nonempty strings')
+            raise SyntaxError('Table column labels must be nonempty strings')
         # Create the Grid, then populate it from table_data
         # Note order here and below - row, col is correct for wx
         self._native_widget.CreateGrid(column_len, len(table_data))
@@ -211,8 +203,7 @@ class Table(WithCharEvents):
                     self._native_widget.ClearSelection()
                 else:
                     # Ctrl+A - select all cells
-                    for c in range(self._native_widget.GetNumberCols()):
-                        self._native_widget.SelectCol(c, True)
+                    self._native_widget.SelectAll()
             elif kcode == ord(u'C'):
                 # Ctrl+C - copy contents of selected cells
                 copy_text_to_clipboard(self._format_selected_cells(
@@ -240,28 +231,26 @@ class Table(WithCharEvents):
             # Selection is limited to a single column, format as a
             # newline-separated list
             sorted_cells = dict_sort(next(iter(sel_cells.values())),
-                                     key_f=lambda k: int(k))
+                                     key_f=int)
             return u'\n'.join(t[1] for t in sorted_cells)
         else:
             # Here is where it gets ugly - we need to format a full table with
             # row/column separators, proper spacing and labels
             clip_text = []
-            row_labels = set(chain.from_iterable(
-                r for r in sel_cells.values()))
-            col_labels = list(sel_cells) ##: do we need the list here?
-            # First calculate the maximum label lengths we'll have to pad to
+            row_labels = set(chain.from_iterable(sel_cells.values()))
+            # First calculate the maximum lengths we'll have to pad to - of
+            # the cells and of the label of each column
             max_row_length = max(map(len, row_labels))
-            max_col_lengths = {}
-            for col_label, col_cells in sel_cells.items():
-                max_col_lengths[col_label] = max(
-                    map(len, col_cells.values()))
+            max_col_lengths = {
+                col_label: max(len(col_label), *map(len, col_cells.values()))
+                for col_label, col_cells in sel_cells.items()}
             # We now have enough info to format the header, so do that
             first_header_line = u' ' * max_row_length + u' | '
             first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
-                                             for l in col_labels)
+                                             for l in sel_cells)
             second_header_line = u'-' * (max_row_length + 1) + u'+'
             second_header_line += u'+'.join(u'-' * (max_col_lengths[l] + 2)
-                                            for l in col_labels)
+                                            for l in sel_cells)
             # Bit hacky - the last one doesn't have a trailing space
             second_header_line = second_header_line[:-1]
             clip_text.append(first_header_line)
@@ -301,7 +290,6 @@ class Table(WithCharEvents):
                 # there's a value in the cell before storing it (we don't want
                 # to override cells the user didn't originally select)
                 for i, cell_value in enumerate(line_contents[1:]):
-                    cell_value = cell_value
                     if cell_value:
                         ret_dict[col_labels[i]][row_label] = cell_value
         else:
@@ -374,9 +362,9 @@ class DatePicker(_AComponent):
 
     def get_date(self) -> datetime.date:
         """Returns the chosen date as a datetime.date object."""
-        as_datetime = datetime.datetime.strptime(
-            self._native_widget.GetDate().Format('%c'), '%c')
-        return as_datetime.date()
+        wx_date = self._native_widget.GetDate() # its months start at 0
+        return datetime.date(wx_date.GetYear(), wx_date.GetMonth() + 1,
+                             wx_date.GetDay())
 
     def set_date(self, new_date: datetime.date):
         """Sets the currently selected date in this date picker to the
@@ -434,7 +422,8 @@ class _PathPicker(_AComponent):
     def __init__(self, parent, event_type, use_icon=True, *args, hint='',
                  on_enter=None, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self.on_path_changed = self._evt_handler(event_type, lambda e: e.GetPath())
+        self.on_path_changed = self._evt_handler(event_type,
+                                                 lambda e: [e.GetPath()])
         if use_icon:
             ## TODO: Check this looks OK on GTK/OSX, based on the wxPython docs
             # the GTK widget might already have an icon and look odd
@@ -444,12 +433,18 @@ class _PathPicker(_AComponent):
             self.text_field._set_hint(hint)
         if on_enter: # needs use_text_ctrl, made without TE_PROCESS_ENTER, so
             # the dialog would click its default button before we see Enter
-            txt = self._native_widget.GetTextCtrl()
-            txt.SetWindowStyleFlag(txt.GetWindowStyleFlag() |
-                                   _wx.TE_PROCESS_ENTER)
-            txt.Bind(_wx.EVT_KEY_DOWN, lambda evt: on_enter() if
-                evt.GetKeyCode() in (_wx.WXK_RETURN, _wx.WXK_NUMPAD_ENTER)
-                else evt.Skip())
+            txt = self.text_field
+            txt_native = txt._native_widget
+            txt_native.SetWindowStyleFlag(txt_native.GetWindowStyleFlag() |
+                                          _wx.TE_PROCESS_ENTER)
+            # The key down, not EVT_TEXT_ENTER: on wxMSW the file name
+            # completion of the field eats the Enter char, wx never sends it
+            def _enter_down(key_code):
+                if key_code in (_wx.WXK_RETURN, _wx.WXK_NUMPAD_ENTER):
+                    on_enter()
+                    return EventResult.FINISH # else wx clicks the default
+            txt._evt_handler(_wx.EVT_KEY_DOWN, lambda e: [e.GetKeyCode()]
+                             ).subscribe(_enter_down)
 
     def set_initial_directory(self, initial_dir: os.PathLike[str]) -> None:
         self._native_widget.SetInitialDirectory(os.fspath(initial_dir))
@@ -518,21 +513,22 @@ class GlobalMenu(_AEvtHandler):
             super().__init__()
             self.category_label = cat_lbl
 
-    def __init__(self):
+    def __init__(self, frame):
+        """:param frame: The frame to be the menu bar of - wx sends it the
+            events of our menus and of the context menus popped in it. Its
+            set_status_info shows the help of the menu items."""
         super().__init__() # no parent
+        self._frame = frame
         self._category_handlers = {}
-        # We need to do this once and only once, because wxPython does not
-        # support binding multiple methods to one event source. Also, it *has*
-        # to be on Link.Frame, even if that looks weird.
-        ##: de-wx! move links to gui
-        from ..balt import Link
         menu_processor = lambda event: [event.GetMenu()]
-        self._on_menu_opened = Link.Frame._evt_handler(_wx.EVT_MENU_OPEN,
+        self._on_menu_opened = frame._evt_handler(_wx.EVT_MENU_OPEN,
             menu_processor)
-        self._on_menu_closed = Link.Frame._evt_handler(_wx.EVT_MENU_CLOSE,
+        self._on_menu_closed = frame._evt_handler(_wx.EVT_MENU_CLOSE,
             menu_processor)
-        self._on_menu_highlight = Link.Frame._evt_handler(
-            _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()])
+        # never skipped - wx would show the help in the first field too
+        self._on_menu_highlight = frame._evt_handler(
+            _wx.EVT_MENU_HIGHLIGHT_ALL, lambda event: [event.GetId()],
+            skip=False)
         self._on_menu_opened.subscribe(self._handle_menu_opened)
         self._on_menu_closed.subscribe(self._handle_menu_closed)
         self._on_menu_highlight.subscribe(self._handle_menu_highlight)
@@ -550,11 +546,16 @@ class GlobalMenu(_AEvtHandler):
         self._category_handlers[cat_label] = cat_handler
 
     def release_bindings(self):
-        """Releases the 'on menu' bindings used by this class. You *must* call
-        this if you want to replace the global menu at runtime."""
+        """Releases the 'on menu' bindings used by this class and destroys its
+        menu bar. You *must* call this if you want to replace the global menu
+        at runtime."""
         self._on_menu_opened.unsubscribe(self._handle_menu_opened)
         self._on_menu_closed.unsubscribe(self._handle_menu_closed)
         self._on_menu_highlight.unsubscribe(self._handle_menu_highlight)
+        # the frame only detaches the menu bar it replaces - later, as one of
+        # our links may be what is replacing us
+        native = self._native_widget
+        _wx.CallAfter(lambda: native.IsAttached() or native.Destroy())
 
     def set_categories(self, all_categories: list[str]):
         """Creates dropdowns for all specified categories, discarding existing
@@ -570,12 +571,9 @@ class GlobalMenu(_AEvtHandler):
         self._populate_menu(self._categories[menu_category], populate_cb)
 
     def _handle_menu_opened(self, wx_menu):
-        """Internal callback, does the heavy lifting. Also handles status bar
-        text resetting, because wxPython does not permit more than one event
-        handler."""
-        ##: de-wx! move links to gui
-        from ..balt import Link
-        Link.Frame.set_status_info(u'')
+        """Internal callback, does the heavy lifting. Also resets the status
+        bar text, for the context menus too."""
+        self._frame.set_status_info('')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
         # Need to set this, otherwise help text won't be shown
@@ -600,18 +598,20 @@ class GlobalMenu(_AEvtHandler):
             populate_cb(wx_menu)
 
     def _handle_menu_closed(self, wx_menu):
-        """Internal callback, needed to correctly handle help text."""
+        """Internal callback, needed to correctly handle help text. A menu
+        that closes takes the help of its items along, a context menu too -
+        wxMSW sends no highlight event for that. Not a submenu, the item
+        hovered next in its parent may be showing its help already."""
+        if wx_menu is None or not wx_menu.GetParent():
+            self._frame.set_status_info('')
         if isinstance(wx_menu, self._GMCategory):
             Links.Popup = None
 
     def _handle_menu_highlight(self, item_id):
         """Internal callback, shows the help of the item hovered in a menu."""
-        ##: de-wx! move links to gui
-        from ..balt import Link
         if Links.Popup:
             item = Links.Popup.FindItemById(item_id)
-            Link.Frame.set_status_info(item.GetHelp() if item else '')
-        return EventResult.FINISH # wx would show it in the first field too
+            self._frame.set_status_info(item.GetHelp() if item else '')
 
 class Dragger(_AComponent):
     """Class that supports a drag and drop operation on one of its elements."""

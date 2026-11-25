@@ -637,7 +637,6 @@ def _main(opts, detected, restore_):
                     return  # Quit
     #--Start application
     frame = basher.Init(bash_app)  # Link.Frame is set here !
-    frame.ensureDisplayed()
     frame.bind_refresh()
     # Start the update check in the background and pass control to wx's event
     # loop so that the daemon can send its event to the main thread

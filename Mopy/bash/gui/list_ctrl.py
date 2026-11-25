@@ -26,15 +26,15 @@ from __future__ import annotations
 
 __author__ = u'Lojack, Utumno'
 
-import pickle
+import os
 from dataclasses import dataclass
 
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
-from . import EventHandler, Font
 from .base_components import Color, WithCharEvents, WithMouseEvents, \
-    _AComponent, _auto_size_to_wx, scaled
+    _AComponent, _auto_size_to_wx, _style_font, scaled
+from .events import EventHandler
 from .. import bolt, env
 
 class ListCtrl(_wx.ListCtrl):
@@ -52,8 +52,8 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
     functionality, you can provide callbacks for, or override the following functions:
     OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
     OnDropIndexes(self,indexes,newPos) - called to move the specified indexes to new starting position 'newPos'
-    You must provide a callback for fnDndAllow(self, event) - return true to
-    allow dnd, false otherwise
+    You must provide a callback for fnDndAllow() - return true to allow dnd,
+    false otherwise
 
     OnDropFiles callback:   fnDropFiles
     OnDropIndexes callback: fnDropIndexes
@@ -77,11 +77,11 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
                     # File(s) were dropped
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())
                     return _wx.DragCopy
-                elif dtype == self.dataList.GetFormat().GetType():
-                    # ListCtrl indexes
-                    _data = pickle.loads(self.dataList.GetData().tobytes(),
-                                         encoding='bytes')
-                    self.window._OnDropList(x, y, _data)
+                elif (dtype == self.dataList.GetFormat().GetType() and
+                      self.dataList.GetData().tobytes().startswith(
+                          self.window.drag_id)): # Windows may pad the data
+                    # ListCtrl indexes, dragged from our list
+                    self.window._OnDropList(x, y, self.window.dragged)
                     return _wx.DragCopy
             return _wx.DragNone
 
@@ -102,6 +102,9 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
+        # The indexes being dragged stay here - the data we drag just tells
+        # the target the drag is ours, not the one of another list or Bash
+        self.dragged, self.drag_id = [], b'%d %d;' % (os.getpid(), id(self))
         self._header_offset: int | None = None # see GetItemRect
 
     def _doResize(self):
@@ -151,25 +154,17 @@ class _DragListCtrl(ListCtrl, ListCtrlAutoWidthMixin):
                 self._scroll_rows(1)
 
     def OnBeginDrag(self, event):
-        if not self.fnDndAllow(event): return
-        indexes = []
-        start = stop = -1
-        for index in range(self.GetItemCount()):
-            if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
-                if stop >= 0 and self.dndOnlyCont:
-                    # Only allow moving selections if they are in a
-                    # continuous block...they aren't
-                    return
-                if start < 0:
-                    start = index
-                indexes.append(index)
-            else:
-                if start >=0 > stop:
-                    stop = index - 1
-        if stop < 0: stop = self.GetItemCount()
-        selected = pickle.dumps(indexes, 1)
-        ldata = _wx.CustomDataObject(u'ListIndexes')
-        ldata.SetData(selected)
+        if not self.fnDndAllow(): return # wx starts no drag by itself
+        self.dragged, index = [], self.GetFirstSelected()
+        while index != -1:
+            self.dragged.append(index)
+            index = self.GetNextSelected(index)
+        if not self.dragged or (self.dndOnlyCont and self.dragged[-1] -
+                                self.dragged[0] >= len(self.dragged)):
+            # Only allow moving selections if they are in a continuous block
+            return
+        ldata = _wx.CustomDataObject('ListIndexes')
+        ldata.SetData(self.drag_id)
         data_object = _wx.DataObjectComposite()
         data_object.Add(ldata)
         source = _wx.DropSource(self)
@@ -316,8 +311,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         return (ec := self.__ec()) and ec.GetSelection()
 
     def ec_set_f2_handler(self, on_char_handler):
-        """Sets a handler for when the F2 key is pressed. Note that you have to
-        return EventResult.FINISH when handling this event."""
+        """Sets a handler for when the F2 key is pressed. Return
+        EventResult.FINISH if you handled the key."""
         ec = self.__ec()
         if ec is None: return
         on_char = EventHandler(ec, _wx.EVT_KEY_DOWN,
@@ -429,8 +424,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
             g_item.SetImage(icon_index)
         g_item.SetTextColour(df.text_key.to_rgba_tuple())
         g_item.SetBackgroundColour(df.back_key.to_rgba_tuple())
-        g_item.SetFont(Font.Style(g_item.GetFont(), strong=df.bold,
-                                  slant=df.italics, underline=df.underline))
+        g_item.SetFont(_style_font(g_item.GetFont(), strong=df.bold,
+                                   slant=df.italics, underline=df.underline))
         if insert: # associate our internal id with this item/row
             i = self.__id(item)
             g_item.SetData(i)
@@ -535,9 +530,9 @@ class ImageListBox(_AComponent):
                 self._resolve(item_image).GetBitmap((img_size, img_size))))
             if greyed:
                 native.SetItemTextColour(item_dex, grey)
-            if italics: # Style modifies the font GetFont returned, a copy
+            if italics: # _style_font modifies the font GetFont returns, a copy
                 native.SetItemFont(item_dex,
-                                   Font.Style(native.GetFont(), slant=True))
+                                   _style_font(native.GetFont(), slant=True))
             self._item_keys.append(item_key)
 
     def select_key(self, item_key) -> bool:

@@ -61,7 +61,6 @@ class _TopLevelWin(_AComponent):
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle is not None: self.set_icons(icon_bundle)
-        if self._min_size: self.set_min_size(*self._min_size) ##: shouldn't we set this in _set_pos_size??
 
     def _set_pos_size(self, kwargs):
         wanted_pos = kwargs.get('pos', None) or \
@@ -71,13 +70,16 @@ class _TopLevelWin(_AComponent):
             self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
         wanted_width, wanted_height = kwargs.get('size', None) or \
             self._sizes_dict.get(self._size_key, self._def_size)
-        # Check if our wanted width or height is too small and bump it up
-        if self._min_size:
-            if wanted_width < self._min_size[0]:
-                wanted_width = self._min_size[0]
-            if wanted_height < self._min_size[1]:
-                wanted_height = self._min_size[1]
+        if self._min_size: # bump up a wanted width or height that's too small
+            self.set_min_size(*self._min_size)
+            wanted_width = max(wanted_width, self._min_size[0])
+            wanted_height = max(wanted_height, self._min_size[1])
         self.component_size = (wanted_width, wanted_height)
+        # the screen we were on when the position was saved may be gone - not
+        # detected on wxGTK, that finds a display for a window wherever it is
+        if _wx.Display.GetFromWindow(self._native_widget) == _wx.NOT_FOUND:
+            self._native_widget.Move(
+                _wx.Display(0).GetGeometry().GetTopLeft() + (100, 100))
 
     @property
     def is_maximized(self):
@@ -110,24 +112,25 @@ class _TopLevelWin(_AComponent):
         handler will be allowed to veto the destruction of the window."""
         self._native_widget.Close(force_close)
 
+    def _save_pos_size(self):
+        """Save our position and size, for the next window of our kind."""
+        if not self.is_iconized and not self.is_maximized:
+            if self._pos_key:
+                self._sizes_dict[self._pos_key] = self.component_position
+            if self._size_key:
+                self._sizes_dict[self._size_key] = self.component_size
+
     def on_closing(self, destroy=True):
         """Invoked right before this window is destroyed."""
-        if not self.is_iconized and not self.is_maximized:
-            if self._pos_key: self._sizes_dict[self._pos_key] = self.component_position
-            if self._size_key: self._sizes_dict[self._size_key] = self.component_size
+        self._save_pos_size()
         if destroy: self.native_destroy()
-
-    def ensureDisplayed(self, x=100, y=100): ##: revisit uses
-        """Ensure that frame is displayed."""
-        if _wx.Display.GetFromWindow(self._native_widget) == -1:
-            topLeft = _wx.Display(0).GetGeometry().GetTopLeft()
-            self._native_widget.Move(topLeft.x + x, topLeft.y + y)
 
 class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
 
     Events:
-     - on_activate(): Posted when the frame is activated.
+     - on_activate(is_active: bool): Posted when the frame is activated or
+       deactivated.
      """
     _min_size = _def_size = (250, 250)
     _native_widget: _wx.Frame
@@ -154,7 +157,29 @@ class WindowFrame(_TopLevelWin):
 
     def raise_frame(self): self._native_widget.Raise()
 
-class DialogWindow(_TopLevelWin):
+class _AModal(_AComponent):
+    """A window to show modally: through display_dialog, or by calling its
+    show_modal in a with block, which destroys it on exit."""
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.native_destroy()
+
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        """Instantiate a dialog, display it and return the ShowModal result."""
+        with cls(*args, **kwargs) as dialog:
+            return dialog.show_modal()
+
+    def show_modal(self) -> bool:
+        """Begins a new modal dialog and returns a boolean indicating if the
+        exit code was fine. Note that some subclasses override this to return
+        more than just that boolean.
+
+        :return: True if the dialog was closed with a good exit code (e.g. by
+            clicking an 'OK' or 'Yes' button), False otherwise."""
+        return self._native_widget.ShowModal() in (_wx.ID_OK, _wx.ID_YES)
+
+class DialogWindow(_AModal, _TopLevelWin):
     """Wrap a dialog control."""
     title: str
     _native_widget: _wx.Dialog
@@ -173,35 +198,16 @@ class DialogWindow(_TopLevelWin):
         if caption: style |= _wx.CAPTION
         super().__init__(parent, sizes_dict, icon_bundle, title=self.title,
                          style=style, **kwargs)
-        self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
-        self._on_size_changed.subscribe(self.save_size) # save dialog size
 
-    def save_size(self):
-        self._sizes_dict[self._size_key] = self.component_size
-
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.native_destroy()
+    def show_modal(self):
+        result = super().show_modal()
+        self._save_pos_size() # on_closing only runs for the close button
+        return result
 
     def on_closing(self, destroy=False): # flip destroy to False
         # dialogs are shown via the context manager above, if we destroy
         # them here they won't be destroyed on __exit__ on mac at least
-        super(DialogWindow, self).on_closing(destroy)
-
-    @classmethod
-    def display_dialog(cls, *args, **kwargs):
-        """Instantiate a dialog, display it and return the ShowModal result."""
-        with cls(*args, **kwargs) as dialog:
-            return dialog.show_modal()
-
-    def show_modal(self) -> bool:
-        """Begins a new modal dialog and returns a boolean indicating if the
-        exit code was fine. Note that some subclasses override this to return
-        more than just that boolean.
-
-        :return: True if the dialog was closed with a good exit code (e.g. by
-            clicking an 'OK' or 'Yes' button), False otherwise."""
-        return self._native_widget.ShowModal() in (_wx.ID_OK, _wx.ID_YES)
+        super().on_closing(destroy)
 
     def accept_modal(self):
         """Closes the modal dialog with a 'normal' exit code. Equivalent to
@@ -218,8 +224,21 @@ class MaybeModalDialogWindow(DialogWindow):
     def show_modeless(self):
         """Open this dialog in a modeless fashion. It will behave similarly to
         a WindowFrame."""
+        # wx just hides a modeless dialog on OK, Cancel or the close button -
+        # which clicks one of those, if present - and no with block destroys us
+        if not any(map(self._native_widget.FindWindow,
+                       (_wx.ID_OK, _wx.ID_CANCEL))):
+            raise SyntaxError('A modeless dialog needs an OK or Cancel button')
+        self._on_dismiss = self._evt_handler(_wx.EVT_BUTTON,
+                                             lambda event: [event.GetId()])
+        self._on_dismiss.subscribe(self._dismiss)
         self._native_widget.Show()
         self._native_widget.Raise()
+
+    def _dismiss(self, button_id):
+        if button_id in (_wx.ID_OK, _wx.ID_CANCEL):
+            self.on_closing(destroy=True)
+            return EventResult.FINISH
 
 class _LogWin(_TopLevelWin):
     """Mixin for common log-like windows options. Must come *right* before a
@@ -233,8 +252,9 @@ class _LogWin(_TopLevelWin):
                          sizes_dict=sizes_dict, **kwargs)
         self.set_min_size(200, 200)
         layout_kw = {'border': 2}
-        #--Buttons
-        ok_butt = OkButton(self, on_click=self.close_win)
+        #--Buttons - wx ends a modal dialog on OK itself
+        ok_butt = OkButton(self, on_click=None if isinstance(
+            self, DialogWindow) else self.close_win)
         if wrye_log:
             #--Text
             self._html_ctrl = DocumentViewer(self, dv_bitmaps)
@@ -251,7 +271,7 @@ class _LogWin(_TopLevelWin):
             # called we get white borders instead of grey todo PY3: test if needed
             self.reset_background_color()
             #--Text
-            txtCtrl = TextArea(self, init_text=logText, auto_tooltip=False)
+            txtCtrl = TextArea(self, init_text=logText)
                               # special=True) SUNKEN_BORDER and TE_RICH2
             layout_kw['items'] = [
                 (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
@@ -304,7 +324,8 @@ def _room(win, vert):
         return max(room1, room2)
     if sizer := win.GetSizer():
         return _sizer_room(sizer, vert)
-    return max((_room(c, vert) for c in win.GetChildren()), default=0)
+    return max((_room(c, vert) for c in win.GetChildren() # not its dialogs
+                if not c.IsTopLevel()), default=0)
 
 def _sizer_room(sizer, vert):
     """The room the items of sizer need - the windows that stretch (lists,
@@ -337,7 +358,7 @@ class Splitter(_AComponent):
         nw.SetSashGravity(sash_gravity)
         # The position to go back to - gravity moves the sash on its own
         self._keep_pos, self._wanted_pos = not sash_gravity, None
-        self._on_paint = self._evt_handler(_wx.EVT_PAINT)
+        self._on_paint = self._evt_handler(_wx.EVT_PAINT, skip=False)
         self._on_paint.subscribe(self._paint_sash)
         self._on_size = self._evt_handler(_wx.EVT_SIZE)
         self._on_size.subscribe(self._fit_panes)
@@ -347,10 +368,11 @@ class Splitter(_AComponent):
         panes = first_pane or PanelWin(self), second_pane or PanelWin(self)
         nw = self._native_widget
         split = nw.SplitVertically if vertically else nw.SplitHorizontally
-        split(*(natives := [*map(self._resolve, panes)]), sash_position)
+        split(*map(self._resolve, panes), sash_position)
         # wx redraws the native sash over our grip when resizing the panes and
         # on releasing the dragged sash, where the panes keep their size
-        for pane in natives: pane.Bind(_wx.EVT_SIZE, self._refresh_sash)
+        for pane in panes:
+            pane._evt_handler(_wx.EVT_SIZE).subscribe(self._refresh_sash)
         # Only our own sash - the events of nested splitters bubble up to us
         nw.Bind(_wx.EVT_SPLITTER_SASH_POS_CHANGED, self._sash_moved, nw)
         return panes
@@ -380,13 +402,13 @@ class Splitter(_AComponent):
             return pos, 0, sash, h
         return 0, pos, w, sash
 
-    def _refresh_sash(self, event):
-        event.Skip()
+    def _refresh_sash(self):
         self._native_widget.RefreshRect(_wx.Rect(*self._sash_rect()))
 
     def _sash_moved(self, event):
         self._wanted_pos = self._keep_pos and event.GetSashPosition()
-        self._refresh_sash(event)
+        self._refresh_sash()
+        event.Skip()
 
     def _paint_sash(self):
         """Replaces wx's OnPaint - draw the native sash and a grip in its
@@ -407,7 +429,6 @@ class Splitter(_AComponent):
                 _wx.SYS_COLOUR_BTNSHADOW)))
             dc.DrawRoundedRectangle(x + (w - gw) // 2, y + (h - gh) // 2, gw,
                                     gh, scaled(1))
-        return EventResult.FINISH
 
     def get_sash_pos(self):
         return self._wanted_pos or self._native_widget.GetSashPosition()
@@ -447,13 +468,10 @@ class TabbedPanel(_APageComponent):
 
     def __init__(self, parent, multiline=False):
         super().__init__(parent, style=_wx.NB_MULTILINE if multiline else 0)
+        # never skipped - else it would go on to the notebook we may be in
         self.on_nb_page_change = self._evt_handler(
             _wx.EVT_NOTEBOOK_PAGE_CHANGED,
-            lambda event: [event.GetId(), event.GetSelection()])
-
-    def stop_event(self, event_id):
-        """InstallersDetails event will propagate to the BashFrame.notebook."""
-        return event_id != self._native_widget.GetId()
+            lambda event: [event.GetSelection()], skip=False)
 
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different
@@ -498,16 +516,16 @@ class CenteredSplash(_AComponent):
             splash_bitmap, splash_style, 1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self._stop_splash)
-        _wx.Yield() ##: huh?
+        _wx.Yield() # paint it, there is no event loop running while we boot
 
     def __enter__(self): return self
 
     def _stop_splash(self):
         """Hides and terminates the splash screen."""
         if self._native_widget is None: return
+        self.visible = False # it's only destroyed once the event loop idles
         self.native_destroy()
-        ##: Apparently won't be hidden if warnTooManyModsBsas warns(?)
-        self.visible = False
+        self._native_widget = None # a click closes us, then we exit the with
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._stop_splash()
@@ -529,17 +547,17 @@ class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
         #--Setup Popup menu for Right Click on a Tab
         self._on_ctxt_menu = self._evt_handler(_wx.EVT_CONTEXT_MENU,
             lambda event: [self._native_widget.HitTest(
-                self._native_widget.ScreenToClient(event.GetPosition()))])
+                self._native_widget.ScreenToClient(event.GetPosition()))[0]])
         self._on_ctxt_menu.subscribe(self._do_tab_menu)
 
-    def _do_tab_menu(self, tabId):
-        if tabId != _wx.NOT_FOUND and tabId[0] != _wx.NOT_FOUND:
+    def _do_tab_menu(self, tab_index):
+        if tab_index != _wx.NOT_FOUND:
             self._tab_menu.popup_menu(self, None)
             return EventResult.FINISH
 
-    def _on_drag_start(self, mouse_evnt, _lb_dex_and_flags):
+    def _on_drag_start(self, mouse_evnt, lb_dex_and_flags):
         if not self._native_widget.HasCapture(): # or blow up on CaptureMouse()
-            self.__dragging = _lb_dex_and_flags
+            self.__dragging = lb_dex_and_flags[0] # NOT_FOUND if on no tab
             if self.__dragging != _wx.NOT_FOUND:
                 self.__dragX = mouse_evnt.evt_pos[0]
                 self.__justSwapped = _wx.NOT_FOUND
@@ -567,21 +585,19 @@ class DnDNotebook(WithDragEvents, TabbedPanel): # Dragger?
             pos = mouse_evnt.evt_pos
             if abs(pos[0] - self.__dragX) > 5:
                 self.set_cursor(hand=True)
-            tabId = self._native_widget.HitTest(pos)
-            if tabId == _wx.NOT_FOUND or tabId[0] in (_wx.NOT_FOUND,self.__dragging[0]):
+            newPos = self._native_widget.HitTest(pos)[0]
+            if newPos in (_wx.NOT_FOUND, self.__dragging):
                 self.__justSwapped = _wx.NOT_FOUND
             else:
-                if self.__justSwapped == tabId[0]:
+                if self.__justSwapped == newPos:
                     return
                 # We'll do the swapping by removing all pages in the way,
                 # then readding them in the right place.  Do this because
                 # it makes the tab we're dragging not have to refresh, whereas
                 # if we just removed the current page and reinserted it in the
                 # correct position, there would be refresh artifacts
-                newPos = tabId[0]
-                oldPos = self.__dragging[0]
-                self.__justSwapped = oldPos
-                self.__dragging = tabId[:]
+                oldPos = self.__justSwapped = self.__dragging
+                self.__dragging = newPos
                 if newPos < oldPos:
                     left,right,step = newPos,oldPos,1
                 else:

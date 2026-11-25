@@ -98,10 +98,6 @@ class InstallerWizard(WizardDialog):
         self._next_button.enabled = btn_enabled
         self._finish_button.enabled = btn_enabled
 
-    def save_size(self): ##: needed?
-        # Otherwise, regular resize, save the size if we're not maximized
-        self.on_closing(destroy=False)
-
     def _has_next_page(self):
         return not self.parser.parser_finished
 
@@ -155,8 +151,7 @@ class PageError(PageInstaller):
         # Layout stuff
         VLayout(spacing=5, items=[
             Label(self, title),
-            (TextArea(self, editable=False, init_text=errorMsg,
-                      auto_tooltip=False),
+            (TextArea(self, editable=False, init_text=errorMsg),
              LayoutOptions(weight=1, expand=True))
         ]).apply_to(self)
         self.update_layout()
@@ -175,7 +170,7 @@ class PageSelect(PageInstaller):
         self.bMany = bMany
         self.index = None
         self.title_desc = Label(self, desc)
-        self.textItem = TextArea(self, editable=False, auto_tooltip=False)
+        self.textItem = TextArea(self, editable=False)
         self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
         kwargs = dict(choices=self.listItems, isHScroll=True,
                       onSelect=self.OnSelect)
@@ -184,7 +179,7 @@ class PageSelect(PageInstaller):
         self._page_links = Links()
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
-            self.listOptions.on_mouse_right_up.subscribe(self._on_right_click)
+            self.listOptions.on_context.subscribe(self._on_right_click)
             self._page_links.append_link(_Page_SelectAll(self.listOptions))
             self._page_links.append_link(_Page_DeselectAll(self.listOptions))
             self._page_links.append_link(_Page_ToggleAll(self.listOptions))
@@ -379,8 +374,8 @@ class PageFinish(PageInstaller):
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
             Label(self, _('Notes:')),
-            (TextArea(self, init_text=''.join(wrye_parser.notes),
-                      auto_tooltip=False), LayoutOptions(weight=1)),
+            (TextArea(self, init_text=''.join(wrye_parser.notes)),
+             LayoutOptions(weight=1)),
             HLayout(items=[
                 Stretch(),
                 VLayout(spacing=2, items=[self.checkApply, self.checkInstall])

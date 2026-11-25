@@ -30,7 +30,7 @@ from .. import bass, bolt, bosh, load_order
 from ..balt import CheckLink, SeparatorLink
 from ..bolt import FName, dict_sort, text_wrap
 from ..gui import TOP, AObject, Button, CheckBox, CheckListBox, \
-    DeselectAllButton, EventResult, FileOpenMultiple, HBoxedLayout, Label, \
+    DeselectAllButton, FileOpenMultiple, HBoxedLayout, Label, \
     LayoutOptions, Lazy, ListBox, Links, PanelWin, SearchBar, \
     SelectAllButton, Spacer, TextArea, VLayout, askText, showError, askNumber
 from ..patcher.base import MultiTweakItem
@@ -260,30 +260,6 @@ class _ListPatcherPanel(_PatcherPanel, ListPatcherConfig):
 #------------------------------------------------------------------------------
 class _ChoiceMenuMixin(object):
 
-    def _bind_mouse_events(self, right_click_list: ListBox | CheckListBox):
-        right_click_list.on_mouse_motion.subscribe(self._handle_mouse_motion)
-        right_click_list.on_mouse_right_down.subscribe(self._right_mouse_click)
-        right_click_list.on_mouse_right_up.subscribe(self._right_mouse_up)
-        self.mouse_pos = None
-
-    def _right_mouse_click(self, pos): self.mouse_pos = pos
-
-    def _right_mouse_up(self, lb_selection_dex):
-        if self.mouse_pos: self.ShowChoiceMenu(lb_selection_dex)
-        # return
-
-    def _handle_mouse_motion(self, wrapped_evt, lb_dex: int):
-        """Check mouse motion to detect right click event."""
-        if wrapped_evt.is_dragging: # cancel right up if user drags mouse away of the item
-            if self.mouse_pos:
-                oldx, oldy = self.mouse_pos
-                x, y = wrapped_evt.evt_pos
-                if max(abs(x - oldx), abs(y - oldy)) > 4:
-                    self.mouse_pos = None
-                return EventResult.FINISH ##: needed?
-        else:
-            self.mouse_pos = None
-
     def ShowChoiceMenu(self, lb_index: int): raise NotImplementedError
 
 _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
@@ -308,7 +284,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
             self._tweak_search.on_text_changed.subscribe(
                 self._handle_tweak_search)
             #--Events
-            self._bind_mouse_events(self.gTweakList)
+            self.gTweakList.on_context.subscribe(self.ShowChoiceMenu)
+            self.gTweakList.on_mouse_motion.subscribe(self._handle_mouse_motion)
             self.gTweakList.on_mouse_leaving.subscribe(self._mouse_leaving)
             self.mouse_dex = -1
             #--Layout
@@ -371,22 +348,15 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
 
     def _mouse_leaving(self):
         self._parent.gTipText.label_text = ''
-        self.mouse_pos = None
 
     def _handle_mouse_motion(self, wrapped_evt, lb_dex: int):
-        """Check mouse motion to detect right click event. If any mouse button
+        """Show the tip of the tweak the mouse moves over. If any mouse button
          is held pressed, is_moving is False and is_dragging is True."""
-        if wrapped_evt.is_moving:
-            self.mouse_pos = None
-            if lb_dex != self.mouse_dex:
-                # Show tip text when changing item
-                self.mouse_dex = lb_dex
-                self._parent.gTipText.label_text = (
-                    self._curr_tweaks[lb_dex].tweak_tip
-                    if 0 <= lb_dex < len(self._curr_tweaks) else '')
-        else:
-            super(_TweakPatcherPanel, self)._handle_mouse_motion(wrapped_evt,
-                                                                 lb_dex)
+        if wrapped_evt.is_moving and lb_dex != self.mouse_dex:
+            self.mouse_dex = lb_dex
+            self._parent.gTipText.label_text = (
+                self._curr_tweaks[lb_dex].tweak_tip
+                if 0 <= lb_dex < len(self._curr_tweaks) else '')
 
     def _handle_tweak_search(self, search_str):
         """Internal callback used to repopulate the tweak list whenever the
@@ -399,7 +369,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel, TweakPatcherConfig):
 
     def ShowChoiceMenu(self, lb_index: int):
         """Displays a popup choice menu if applicable."""
-        if lb_index >= len(self._curr_tweaks): return
+        if not 0 <= lb_index < len(self._curr_tweaks): return
         tweak = self._curr_tweaks[lb_index]
         choiceLabels = tweak.choiceLabels
         if len(choiceLabels) <= 1: return
@@ -552,7 +522,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel, ListMergerConfig):
 
     def native_init(self, *args, **kwargs):
         if freshly_created := super().native_init(*args, **kwargs):
-            self._bind_mouse_events(self.gList)
+            self.gList.on_context.subscribe(self.ShowChoiceMenu)
         return freshly_created
 
     def _style_patcher_label(self, bold=False, italics=False):
