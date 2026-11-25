@@ -113,11 +113,10 @@ Return Values:
   Create the handlers of those with skip=False - that is up to the event, not
   to each of its listeners.
   Return FINISH only when the listener did what wx and the control would do,
-  or to prevent that: a finished click or key never reaches the control (no
-  focus, no selection, no typing), wx's own handlers do not run (a finished
-  OK click does not close its dialog) and the parents do not get the event -
-  clicks on controls, menu, notebook and context menu events travel up to
-  them otherwise."""
+  or to stop them doing it. A finished event does not reach the control (a
+  click or key gives no focus, no selection, no typing), nor wx's handlers
+  (an OK click does not close its dialog), nor the parents - clicks on
+  controls, menu, notebook and context menu events go up to them otherwise."""
 from __future__ import annotations
 
 __author__ = 'Infernio'
