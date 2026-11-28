@@ -50,6 +50,7 @@ except ImportError:
 import win32api
 import win32com.client as win32client
 import win32gui
+from win32com.shell import shell, shellcon
 from win32con import FILE_ATTRIBUTE_HIDDEN
 
 from .common import _find_legendary_games, _get_language_paths, \
@@ -155,7 +156,18 @@ def file_operation(operation: FileOperationType,
         import warnings
         warnings.warn(f'Exception in ifileoperation: {e}. If you are running '
             f'on WINE this is expected, otherwise please report this issue. '
-            f'Falling back to standard library implementation.')
+            f'Falling back to SHFileOperation or the standard library.')
+        if operation is FileOperationType.DELETE and allow_undo:
+            # WINE's SHFileOperation recycles to the host's trash (send2trash
+            # uses IFileOperation) but stops at a missing file - the FOF_
+            # flags are the low word of ours
+            if srcs := [*filter(os.path.exists, sources_dests)]:
+                hwnd = 0 if parent is None else parent.GetHandle()
+                res, aborted = shell.SHFileOperation((hwnd, shellcon.FO_DELETE,
+                    '\0'.join(map(os.fspath, srcs)), None, op_flgs & 0xFFFF))
+                if aborted: raise SkipError()
+                if res: raise ctypes.WinError(res)
+            return {}
         return _default_file_operation(operation, sources_dests, allow_undo,
             ask_confirm, rename_on_collision, silent,)
     # Filter out deletions:
